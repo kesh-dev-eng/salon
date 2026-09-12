@@ -1084,7 +1084,7 @@ export default function App() {
               </button>
             </div>
 
-            {/* RIGHT: Photo with prev/next arrows */}
+            {/* RIGHT: Photo with prev/next arrows and overlay */}
             <div className="sck-about-photo-col gsap-reveal">
               <div className="sck-about-photo-frame">
                 <img
@@ -1093,30 +1093,50 @@ export default function App() {
                   alt={ABOUT_PHOTOS[aboutPhotoIdx].title}
                   className="sck-about-photo"
                 />
-                <div className="sck-about-photo-caption">
-                  <span className="sck-photo-caption-title">{ABOUT_PHOTOS[aboutPhotoIdx].title}</span>
-                  <span className="sck-photo-caption-sub">{ABOUT_PHOTOS[aboutPhotoIdx].subtitle}</span>
-                </div>
-                <div className="sck-about-photo-nav">
-                  <button
-                    type="button"
-                    className="sck-photo-nav-btn"
-                    onClick={() => setAboutPhotoIdx((prev) => (prev === 0 ? ABOUT_PHOTOS.length - 1 : prev - 1))}
-                    aria-label="Previous photo"
-                  >
-                    ‹
-                  </button>
-                  <span className="sck-photo-counter">
-                    {aboutPhotoIdx + 1} / {ABOUT_PHOTOS.length}
-                  </span>
-                  <button
-                    type="button"
-                    className="sck-photo-nav-btn"
-                    onClick={() => setAboutPhotoIdx((prev) => (prev === ABOUT_PHOTOS.length - 1 ? 0 : prev + 1))}
-                    aria-label="Next photo"
-                  >
-                    ›
-                  </button>
+
+                {/* Floating Navigation Arrows */}
+                <button
+                  type="button"
+                  className="sck-about-arrow sck-about-arrow-prev"
+                  onClick={() => setAboutPhotoIdx((prev) => (prev === 0 ? ABOUT_PHOTOS.length - 1 : prev - 1))}
+                  aria-label="Previous photo"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="sck-about-arrow sck-about-arrow-next"
+                  onClick={() => setAboutPhotoIdx((prev) => (prev === ABOUT_PHOTOS.length - 1 ? 0 : prev + 1))}
+                  aria-label="Next photo"
+                >
+                  ›
+                </button>
+
+                {/* Scrim Overlay & Refined Caption */}
+                <div className="sck-about-photo-overlay">
+                  <div className="sck-about-photo-info">
+                    {ABOUT_PHOTOS[aboutPhotoIdx].tag && (
+                      <span className="sck-photo-caption-tag">{ABOUT_PHOTOS[aboutPhotoIdx].tag}</span>
+                    )}
+                    <h3 className="sck-photo-caption-title">{ABOUT_PHOTOS[aboutPhotoIdx].title}</h3>
+                    <p className="sck-photo-caption-sub">{ABOUT_PHOTOS[aboutPhotoIdx].subtitle}</p>
+                  </div>
+                  <div className="sck-about-photo-pagination">
+                    <span className="sck-photo-counter">
+                      0{aboutPhotoIdx + 1} <span className="sck-photo-counter-divider">/</span> 0{ABOUT_PHOTOS.length}
+                    </span>
+                    <div className="sck-photo-dots">
+                      {ABOUT_PHOTOS.map((p, idx) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className={`sck-photo-dot ${aboutPhotoIdx === idx ? 'is-active' : ''}`}
+                          onClick={() => setAboutPhotoIdx(idx)}
+                          aria-label={`Go to photo ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1226,7 +1246,7 @@ export default function App() {
             timetable={timetable}
             preselectedService={bookingPreselectedService}
             onBookSuccess={(newEntry) => {
-              handleSaveBooking(newEntry)
+              setBookings((prev) => [newEntry, ...(prev || [])])
             }}
             onNavigate={navigateTo}
           />

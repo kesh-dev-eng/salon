@@ -133,7 +133,7 @@ body {
 main {
   position: relative;
   z-index: 5;
-  padding-top: 120px;
+  padding-top: 0;
 }
 
 /* ---------- TYPOGRAPHY & COMMON UTILITIES ---------- */
@@ -807,15 +807,15 @@ section {
 
 @media (max-width: 959px) {
   .sck-header {
-    height: 72px;
+    height: 88px;
   }
   .sck-nav {
-    height: 72px;
+    height: 88px;
     padding: 0 4vw;
   }
   .sck-logo-box {
-    width: 52px;
-    height: 52px;
+    width: 60px;
+    height: 60px;
   }
   .sck-logo-italic {
     font-size: 13px;
@@ -837,15 +837,15 @@ section {
 
 @media (max-width: 768px) {
   .sck-header {
-    height: 68px;
+    height: 84px;
   }
   .sck-nav {
-    height: 68px;
-    padding: 0 16px;
+    height: 84px;
+    padding: 0 18px;
   }
   .sck-logo-box {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
   }
   .sck-logo-italic {
     font-size: 11.5px;
@@ -855,12 +855,12 @@ section {
     font-size: 17px;
   }
   .sck-actions {
-    gap: 10px;
+    gap: 12px;
   }
   .sck-btn-teal.sck-book-btn {
-    padding: 8px 14px;
-    font-size: 12px;
-    min-height: 40px;
+    padding: 10px 18px;
+    font-size: 13px;
+    min-height: 42px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -883,15 +883,15 @@ section {
 
 @media (max-width: 480px) {
   .sck-header {
-    height: 64px;
+    height: 82px;
   }
   .sck-nav {
-    height: 64px;
-    padding: 0 12px;
+    height: 82px;
+    padding: 0 16px;
   }
   .sck-logo-box {
-    width: 42px;
-    height: 42px;
+    width: 54px;
+    height: 54px;
   }
   .sck-logo-italic {
     font-size: 10.5px;
@@ -900,12 +900,16 @@ section {
     font-size: 14.5px;
   }
   .sck-actions {
-    gap: 8px;
+    gap: 10px;
   }
   .sck-btn-teal.sck-book-btn {
-    padding: 7px 11px;
-    font-size: 11px;
+    padding: 9px 16px;
+    font-size: 12.5px;
     letter-spacing: 0.02em;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   .nav {
     padding: 12px 14px;
@@ -929,9 +933,9 @@ section {
     gap: 4px;
   }
   .nav__hamburger {
-    width: 36px;
-    height: 36px;
-    padding: 6px 4px;
+    width: 40px;
+    height: 40px;
+    padding: 8px 6px;
   }
   .hero-cta-group {
     flex-direction: column;
@@ -947,15 +951,15 @@ section {
 
 @media (max-width: 360px) {
   .sck-header {
-    height: 60px;
+    height: 78px;
   }
   .sck-nav {
-    height: 60px;
-    padding: 0 10px;
+    height: 78px;
+    padding: 0 12px;
   }
   .sck-logo-box {
-    width: 38px;
-    height: 38px;
+    width: 48px;
+    height: 48px;
   }
   .sck-logo-italic {
     font-size: 9.5px;
@@ -964,8 +968,9 @@ section {
     font-size: 13.5px;
   }
   .sck-btn-teal.sck-book-btn {
-    padding: 6px 9px;
-    font-size: 10.5px;
+    padding: 8px 13px;
+    font-size: 11.5px;
+    min-height: 38px;
   }
   .nav {
     padding: 10px 12px;
@@ -1094,14 +1099,16 @@ section {
 .sck-hero {
   position: relative;
   width: 100%;
-  height: calc(100vh - 120px);
-  min-height: 540px;
-  max-height: 960px;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   background: #0d0d0d;
+  box-sizing: border-box;
+  padding: 130px 24px 60px;
 }
 
 .sck-hero-bg {
@@ -1116,7 +1123,7 @@ section {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 25%;
+  object-position: center top;
   display: block;
   user-select: none;
   -webkit-user-drag: none;
@@ -1139,7 +1146,7 @@ section {
   justify-content: center;
   padding: 0 24px;
   max-width: 860px;
-  margin-top: -20px;
+  margin-top: 0;
 }
 
 .sck-hero-title {
@@ -3184,11 +3191,12 @@ section {
   overflow: hidden;
 }
 
-/* Two-column grid: text left, photo right — no container padding so photo goes edge-to-edge */
+/* Two-column grid: text left, photo right — borderless flush split */
 .sck-about-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  min-height: 520px;
+  min-height: 560px;
+  align-items: stretch;
 }
 
 /* ── Left text column ─────────────────────────────────── */
@@ -3196,8 +3204,12 @@ section {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 85px 8vw 85px 7vw;
-  max-width: 640px;
+  padding: 85px 6vw 85px 7vw;
+  max-width: 660px;
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(90deg, rgba(7, 6, 6, 0.94) 0%, rgba(7, 6, 6, 0.82) 75%, rgba(7, 6, 6, 0.5) 100%);
+  backdrop-filter: blur(8px);
 }
 
 .sck-about-label {
@@ -3215,13 +3227,13 @@ section {
 
 .sck-about-title {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(2.3rem, 4vw, 3.4rem);
+  font-size: clamp(2.3rem, 3.8vw, 3.4rem);
   font-weight: 400;
   color: #ffffff;
-  line-height: 1.18;
+  line-height: 1.16;
   margin: 0 0 24px;
   letter-spacing: -0.01em;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
 }
 
 .sck-about-body {
@@ -3230,7 +3242,7 @@ section {
   line-height: 1.82;
   color: #d1cbc1;
   margin: 0 0 18px;
-  max-width: 520px;
+  max-width: 530px;
   font-weight: 300;
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
 }
@@ -3269,27 +3281,39 @@ section {
 .sck-about-photo-col {
   position: relative;
   overflow: hidden;
-  min-height: 480px;
+  min-height: 560px;
+  height: 100%;
 }
 
 .sck-about-photo-frame {
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 480px;
+  min-height: 560px;
+  overflow: hidden;
 }
 
-.sck-about-photo-frame::after {
-  display: none;
-}
-
-.sck-about-split-img {
+.sck-about-photo {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
   display: block;
+  animation: sckPhotoFadeIn 0.5s ease-out;
   transition: transform 0.6s ease;
+}
+
+@keyframes sckPhotoFadeIn {
+  from {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Prev / Next arrows overlaid on the photo — luxury dark glass style */
@@ -3297,14 +3321,14 @@ section {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: rgba(12, 11, 10, 0.78);
+  background: rgba(12, 11, 10, 0.75);
   border: 1px solid rgba(255, 144, 0, 0.4);
   backdrop-filter: blur(10px);
   color: #ffffff;
-  font-size: 18px;
+  font-size: 22px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -3326,31 +3350,139 @@ section {
 .sck-about-arrow-prev { left: 24px; }
 .sck-about-arrow-next { right: 24px; }
 
+/* Scrim Overlay & Refined Caption */
+.sck-about-photo-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(7, 6, 6, 0.94) 0%, rgba(7, 6, 6, 0.68) 55%, transparent 100%);
+  padding: 40px 32px 28px;
+  z-index: 6;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+}
+
+.sck-about-photo-info {
+  max-width: 440px;
+}
+
+.sck-photo-caption-tag {
+  display: inline-block;
+  font-family: var(--sans, 'Inter', sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff9000;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+
+.sck-photo-caption-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: #ffffff;
+  margin: 0 0 4px;
+  line-height: 1.25;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+.sck-photo-caption-sub {
+  font-family: var(--sans, 'Inter', sans-serif);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 0;
+  line-height: 1.45;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+.sck-about-photo-pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sck-photo-counter {
+  font-family: var(--sans, 'Inter', sans-serif);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+}
+
+.sck-photo-counter-divider {
+  color: rgba(255, 144, 0, 0.8);
+  margin: 0 2px;
+}
+
+.sck-photo-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sck-photo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.25s ease;
+}
+
+.sck-photo-dot.is-active {
+  background: #ff9000;
+  width: 22px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(255, 144, 0, 0.6);
+}
+
+.sck-photo-dot:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.7);
+}
+
 /* ── Responsive ───────────────────────────────────────── */
-@media (max-width: 900px) {
+@media (max-width: 960px) {
   .sck-about-split {
     grid-template-columns: 1fr;
   }
   .sck-about-text-col {
     padding: 60px 6vw;
     max-width: 100%;
+    background: rgba(7, 6, 6, 0.92);
   }
   .sck-about-photo-col,
   .sck-about-photo-frame {
-    min-height: 340px;
+    min-height: 420px;
   }
 }
 
 @media (max-width: 600px) {
   .sck-about-text-col {
-    padding: 48px 5vw;
+    padding: 44px 5vw;
   }
   .sck-about-title {
-    font-size: 2rem;
+    font-size: 1.95rem;
   }
   .sck-about-photo-col,
   .sck-about-photo-frame {
-    min-height: 280px;
+    min-height: 340px;
+  }
+  .sck-about-photo-overlay {
+    padding: 24px 20px 20px;
+  }
+  .sck-photo-caption-title {
+    font-size: 17px;
+  }
+  .sck-photo-caption-sub {
+    font-size: 12px;
   }
 }
 
@@ -6580,8 +6712,8 @@ section {
   position: relative;
   width: 100%;
   min-height: 580px;
-  margin-top: -120px; /* Pulls background photo to top of viewport under fixed header */
-  padding: 170px 6vw 90px; /* Clearance for fixed header + comfortable breathing room */
+  margin-top: 0;
+  padding: 160px 6vw 90px; /* Clearance for fixed header + comfortable breathing room */
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -6763,7 +6895,8 @@ section {
   background: rgba(10, 8, 7, 0.45);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 144, 0, 0.35);
+  border: none;
+  outline: none;
   color: #ffffff;
   padding: 44px 38px;
   max-width: 480px;
@@ -7605,7 +7738,24 @@ section {
   border-color: rgba(255, 144, 0, 0.38);
 }
 
+.sck-time-slot-card.is-passed {
+  background: rgba(24, 18, 12, 0.45);
+  border: 1px dashed rgba(255, 144, 0, 0.3);
+  opacity: 0.65;
+  cursor: not-allowed;
+  position: relative;
+  filter: grayscale(25%);
+}
+
+.sck-time-slot-card.is-passed:hover {
+  background: rgba(32, 22, 14, 0.55);
+  border-color: rgba(255, 144, 0, 0.5);
+  transform: none;
+}
+
 .sck-time-slot-card.is-passed .sck-time-val {
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: line-through;
   text-decoration-color: rgba(255, 144, 0, 0.6);
 }
 
@@ -7632,6 +7782,48 @@ section {
 .sck-slot-conflict-alert svg {
   flex-shrink: 0;
   color: #ef4444;
+}
+
+/* Notice Banner when all slots are concluded or reserved */
+.sck-all-slots-passed-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(255, 144, 0, 0.12), rgba(30, 20, 10, 0.4));
+  border: 1px solid rgba(255, 144, 0, 0.35);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin: 12px 0 16px;
+  color: #fff;
+  font-size: 13px;
+  animation: sckFadeInAlert 0.25s ease-out;
+}
+
+.sck-all-slots-passed-banner .sck-all-slots-passed-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 144, 0, 0.16);
+  border: 1px solid rgba(255, 144, 0, 0.32);
+  color: #ffaa33;
+  flex-shrink: 0;
+}
+
+.sck-all-slots-passed-banner strong {
+  display: block;
+  color: #ffaa33;
+  margin-bottom: 2px;
+  font-size: 13.5px;
+}
+
+.sck-all-slots-passed-banner p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
 }
 
 @keyframes sckFadeInAlert {
@@ -10052,36 +10244,36 @@ html, body {
 /* 2. Header & Sticky Nav Coordination */
 @media (max-width: 959px) {
   .sck-header {
-    height: 72px !important;
+    height: 88px !important;
   }
   .sck-nav {
-    height: 72px !important;
+    height: 88px !important;
   }
   .sck-catalog-controls {
-    top: 72px !important;
-    scroll-margin-top: 75px !important;
+    top: 88px !important;
+    scroll-margin-top: 92px !important;
   }
   .sck-photo-hero {
-    margin-top: -72px !important;
-    padding-top: 110px !important;
+    margin-top: 0 !important;
+    padding-top: 118px !important;
   }
 }
 
 @media (max-width: 768px) {
   .sck-header {
-    height: 68px !important;
+    height: 84px !important;
   }
   .sck-nav {
-    height: 68px !important;
+    height: 84px !important;
   }
   .sck-catalog-controls {
-    top: 68px !important;
+    top: 84px !important;
     padding: 12px 16px !important;
-    scroll-margin-top: 70px !important;
+    scroll-margin-top: 88px !important;
   }
   .sck-photo-hero {
-    margin-top: -68px !important;
-    padding-top: 96px !important;
+    margin-top: 0 !important;
+    padding-top: 112px !important;
     min-height: 380px !important;
     padding-bottom: 40px !important;
   }
@@ -10089,19 +10281,19 @@ html, body {
 
 @media (max-width: 480px) {
   .sck-header {
-    height: 64px !important;
+    height: 82px !important;
   }
   .sck-nav {
-    height: 64px !important;
+    height: 82px !important;
   }
   .sck-catalog-controls {
-    top: 64px !important;
+    top: 82px !important;
     padding: 10px 14px !important;
-    scroll-margin-top: 66px !important;
+    scroll-margin-top: 86px !important;
   }
   .sck-photo-hero {
-    margin-top: -64px !important;
-    padding-top: 86px !important;
+    margin-top: 0 !important;
+    padding-top: 106px !important;
     min-height: 340px !important;
     padding-bottom: 30px !important;
   }
@@ -10664,8 +10856,13 @@ html, body {
   }
 
   .sck-hero {
-    min-height: 80vh !important;
-    padding: 100px 20px 60px !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    padding: 106px 20px 70px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   .sck-hero-title {

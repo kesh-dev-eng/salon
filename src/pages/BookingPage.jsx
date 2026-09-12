@@ -75,6 +75,13 @@ function calculateEndTime(startTimeStr, durationStr = '60 min') {
   }
 }
 
+export function getLocalDateStr(date = new Date()) {
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
 export function parseSlotDateTime(dateStr, timeStr) {
   try {
     if (!dateStr || !timeStr) return null
@@ -193,21 +200,35 @@ export default function BookingPage({
 
   // Date states
   const today = currentRealTime
-  const [currentDateObj, setCurrentDateObj] = useState(() => {
-    const d = new Date()
-    d.setDate(d.getDate() + 1)
-    return d
-  })
+  const todayStr = useMemo(() => getLocalDateStr(currentRealTime), [currentRealTime])
+  const tomorrowStr = useMemo(() => {
+    const tm = new Date(currentRealTime)
+    tm.setDate(tm.getDate() + 1)
+    return getLocalDateStr(tm)
+  }, [currentRealTime])
 
   const [bookingDate, setBookingDate] = useState(() => {
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    return tomorrow.toISOString().split('T')[0]
+    const now = new Date()
+    const tStr = getLocalDateStr(now)
+    // Check if any slot is still unpassed today
+    const hasRemainingToday = TIME_SLOTS_DATA.some((s) => !isSlotPassed(tStr, s.time, now))
+    if (hasRemainingToday) {
+      return tStr
+    }
+    const tm = new Date(now)
+    tm.setDate(tm.getDate() + 1)
+    return getLocalDateStr(tm)
   })
 
   // Calendar View month & year
-  const [calYear, setCalYear] = useState(() => currentDateObj.getFullYear())
-  const [calMonth, setCalMonth] = useState(() => currentDateObj.getMonth())
+  const [calYear, setCalYear] = useState(() => {
+    const parts = bookingDate.split('-').map(Number)
+    return parts[0] || new Date().getFullYear()
+  })
+  const [calMonth, setCalMonth] = useState(() => {
+    const parts = bookingDate.split('-').map(Number)
+    return parts[1] ? parts[1] - 1 : new Date().getMonth()
+  })
 
   // Time states
   const [timeFilter, setTimeFilter] = useState('all') // 'all' | 'morning' | 'afternoon' | 'evening' | 'custom'
@@ -222,6 +243,8 @@ export default function BookingPage({
   const [guestNotes, setGuestNotes] = useState('')
   const [isQuietChair, setIsQuietChair] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitErrorMsg, setSubmitErrorMsg] = useState(null)
   const [confirmationCode, setConfirmationCode] = useState('')
   const [copiedCode, setCopiedCode] = useState(false)
 
@@ -292,8 +315,10 @@ export default function BookingPage({
   }
 
   const handleQuickPreset = (preset) => {
-    const target = new Date()
-    if (preset === 'tomorrow') {
+    const target = new Date(currentRealTime)
+    if (preset === 'today') {
+      // keep target as today
+    } else if (preset === 'tomorrow') {
       target.setDate(target.getDate() + 1)
     } else if (preset === 'in3days') {
       target.setDate(target.getDate() + 3)
@@ -304,11 +329,9 @@ export default function BookingPage({
     } else if (preset === 'nextweek') {
       target.setDate(target.getDate() + 7)
     }
-    const yyyy = target.getFullYear()
-    const mm = String(target.getMonth() + 1).padStart(2, '0')
-    const dd = String(target.getDate()).padStart(2, '0')
-    setBookingDate(`${yyyy}-${mm}-${dd}`)
-    setCalYear(yyyy)
+    const newDateStr = getLocalDateStr(target)
+    setBookingDate(newDateStr)
+    setCalYear(target.getFullYear())
     setCalMonth(target.getMonth())
     setSlotConflictMsg(null)
   }
@@ -327,24 +350,47 @@ export default function BookingPage({
     return set
   }, [allBookings, bookingDate])
 
+  // Check if every slot is unavailable for the selected date
+  const allSlotsUnavailable = useMemo(() => {
+    const pool = timetable?.timeSlots && Array.isArray(timetable.timeSlots) && timetable.timeSlots.length > 0
+      ? timetable.timeSlots.filter((s) => s.active !== false)
+      : TIME_SLOTS_DATA
+    return pool.length > 0 && pool.every(
+      (s) => bookedTimesOnSelectedDate.has(normalizeTimeStr(s.time)) || isSlotPassed(bookingDate, s.time, currentRealTime)
+    )
+  }, [bookedTimesOnSelectedDate, bookingDate, timetable, currentRealTime])
+
+  // Check if Today has upcoming slots left
+  const isTodayAvailable = useMemo(() => {
+    if (isDateClosed(currentRealTime.getFullYear(), currentRealTime.getMonth(), currentRealTime.getDate())) {
+      return false
+    }
+    const pool = timetable?.timeSlots && Array.isArray(timetable.timeSlots) && timetable.timeSlots.length > 0
+      ? timetable.timeSlots.filter((s) => s.active !== false)
+      : TIME_SLOTS_DATA
+    return pool.some((s) => !isSlotPassed(todayStr, s.time, currentRealTime))
+  }, [currentRealTime, timetable, todayStr])
+
   // Automatically switch bookingTime if the current selection is already booked or passed for this date
   useEffect(() => {
+    const pool = timetable?.timeSlots && Array.isArray(timetable.timeSlots) && timetable.timeSlots.length > 0
+      ? timetable.timeSlots.filter((s) => s.active !== false)
+      : TIME_SLOTS_DATA
+
     const norm = normalizeTimeStr(bookingTime)
     const isBooked = bookedTimesOnSelectedDate.has(norm)
     const isPassed = isSlotPassed(bookingDate, bookingTime, currentRealTime)
 
     if (isBooked || isPassed) {
-      const pool = timetable?.timeSlots && Array.isArray(timetable.timeSlots) && timetable.timeSlots.length > 0
-        ? timetable.timeSlots.filter((s) => s.active !== false)
-        : TIME_SLOTS_DATA
       const firstAvailable = pool.find(
         (s) => !bookedTimesOnSelectedDate.has(normalizeTimeStr(s.time)) && !isSlotPassed(bookingDate, s.time, currentRealTime)
       )
       if (firstAvailable) {
         setBookingTime(firstAvailable.time)
+        setSlotConflictMsg(null)
       }
     }
-  }, [bookedTimesOnSelectedDate, bookingDate, timetable, currentRealTime, bookingTime])
+  }, [bookedTimesOnSelectedDate, bookingDate, timetable, currentRealTime])
 
   const handleApplyCustomTime = () => {
     const timeStr = `${customHour}:${customMin} ${customAmpm}`
@@ -390,6 +436,17 @@ export default function BookingPage({
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setSubmitErrorMsg(null)
+
+    if (!guestName.trim()) {
+      setSubmitErrorMsg('Please enter your full name.')
+      return
+    }
+
+    if (!guestPhone.trim()) {
+      setSubmitErrorMsg('Please provide a mobile phone number for appointment confirmation.')
+      return
+    }
 
     // 1. Strict real-time passed-time check
     if (isSlotPassed(bookingDate, bookingTime, currentRealTime)) {
@@ -407,6 +464,7 @@ export default function BookingPage({
       return
     }
 
+    setIsSubmitting(true)
     const code = 'HUB-' + Math.floor(100000 + Math.random() * 900000)
     setConfirmationCode(code)
 
@@ -423,21 +481,36 @@ export default function BookingPage({
       time: bookingTime,
       isQuietChair: isQuietChair,
       status: 'Confirmed',
-      createdAt: new Date().toISOString().split('T')[0]
+      createdAt: getLocalDateStr(new Date())
     }
 
-    // Attempt sync to Supabase (detects remote database conflicts)
-    const syncRes = await syncBookingToSupabase(newBooking)
-    if (syncRes?.conflict) {
-      setSlotConflictMsg(syncRes.error)
-      const el = document.querySelector('.sck-time-sets-card')
-      if (el) el.scrollIntoView({ behavior: 'smooth' })
-      return
-    }
+    try {
+      // 3. Attempt sync to Supabase (detects remote database conflicts)
+      const syncRes = await syncBookingToSupabase(newBooking)
+      if (syncRes?.conflict) {
+        setSlotConflictMsg(syncRes.error)
+        setIsSubmitting(false)
+        const el = document.querySelector('.sck-time-sets-card')
+        if (el) el.scrollIntoView({ behavior: 'smooth' })
+        fetchBookingsFromSupabase().then((data) => {
+          if (data && data.length > 0) setCloudBookings(data)
+        })
+        return
+      }
 
-    if (onBookSuccess) {
-      onBookSuccess(newBooking)
-    } else {
+      // 4. Immediately lock slot into local cloud pool
+      setCloudBookings((prev) => [newBooking, ...(prev || [])])
+
+      // 5. Notify parent App state safely
+      if (onBookSuccess) {
+        try {
+          onBookSuccess(newBooking)
+        } catch (cbErr) {
+          console.warn('onBookSuccess callback handled:', cbErr)
+        }
+      }
+
+      // 6. Direct localStorage persistence fallback
       try {
         const stored = localStorage.getItem(STORAGE_KEY)
         if (stored) {
@@ -445,13 +518,51 @@ export default function BookingPage({
           parsed.bookings = [newBooking, ...(parsed.bookings || [])]
           localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed))
         }
-      } catch {
-        // ignore
-      }
-    }
+      } catch {}
 
-    setIsSubmitted(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+      setIsSubmitted(true)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (err) {
+      console.error('Reservation failed:', err)
+      setSubmitErrorMsg('Unable to secure reservation. Please check your connection and try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDownloadCalendarEvent = () => {
+    const startDt = parseSlotDateTime(bookingDate, bookingTime)
+    if (!startDt) return
+    const endDt = new Date(startDt.getTime() + 60 * 60 * 1000)
+    const pad = (n) => String(n).padStart(2, '0')
+    const formatIcsTime = (d) =>
+      `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}00Z`
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Barber Hub//Appointment Reservation//EN',
+      'BEGIN:VEVENT',
+      `UID:${confirmationCode}@barberhub.com`,
+      `DTSTAMP:${formatIcsTime(new Date())}`,
+      `DTSTART:${formatIcsTime(startDt)}`,
+      `DTEND:${formatIcsTime(endDt)}`,
+      `SUMMARY:Barber Hub Appointment — ${selectedService?.name || 'Hair Service'}`,
+      `DESCRIPTION:Confirmation Code: ${confirmationCode}\\nStylist: Fifth Avenue Master Stylist\\nClient: ${guestName}\\nPhone: ${guestPhone}`,
+      'LOCATION:Barber Hub, 587 Fifth Avenue, New York, NY 10017',
+      'STATUS:CONFIRMED',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n')
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `BarberHub-${confirmationCode}.ics`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const handleCopyCode = () => {
@@ -573,9 +684,18 @@ export default function BookingPage({
 
                       {/* Quick Presets */}
                       <div className="sck-cal-presets">
+                        {isTodayAvailable && (
+                          <button
+                            type="button"
+                            className={`sck-cal-preset-btn ${bookingDate === todayStr ? 'is-active' : ''}`}
+                            onClick={() => handleQuickPreset('today')}
+                          >
+                            Today
+                          </button>
+                        )}
                         <button
                           type="button"
-                          className="sck-cal-preset-btn"
+                          className={`sck-cal-preset-btn ${bookingDate === tomorrowStr ? 'is-active' : ''}`}
                           onClick={() => handleQuickPreset('tomorrow')}
                         >
                           Tomorrow
@@ -686,6 +806,30 @@ export default function BookingPage({
                         </div>
                       )}
 
+                      {/* Notice Banner if all slots on selected date are unavailable */}
+                      {allSlotsUnavailable && (
+                        <div className="sck-all-slots-passed-banner" role="alert">
+                          <div className="sck-all-slots-passed-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <circle cx="12" cy="12" r="10" />
+                              <polyline points="12 6 12 12 16 14" />
+                            </svg>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <strong>All sessions for {formattedSelectedDate} are concluded or reserved.</strong>
+                            <p>Please select an alternative date on the calendar or jump directly to tomorrow's open chairs.</p>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-gold"
+                            style={{ padding: '8px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}
+                            onClick={() => handleQuickPreset('tomorrow')}
+                          >
+                            View Tomorrow →
+                          </button>
+                        </div>
+                      )}
+
                       {/* Time Set Filter Tabs */}
                       <div className="sck-time-filter-tabs">
                         <button
@@ -737,9 +881,16 @@ export default function BookingPage({
                             return (
                               <div
                                 key={slot.id}
-                                className={`sck-time-slot-card ${isChosen ? 'is-chosen' : ''} ${isUnavailable ? 'is-booked is-passed' : ''}`}
+                                className={`sck-time-slot-card ${isChosen ? 'is-chosen' : ''} ${isBooked ? 'is-booked' : isPassed ? 'is-passed' : ''}`}
                                 onClick={() => {
-                                  if (isUnavailable) return
+                                  if (isBooked) {
+                                    setSlotConflictMsg(`Notice: The ${slot.time} slot on ${formattedSelectedDate} has already been reserved. Please choose an open slot.`)
+                                    return
+                                  }
+                                  if (isPassed) {
+                                    setSlotConflictMsg(`Notice: The ${slot.time} slot has already passed for today (${formattedSelectedDate}). Please select an upcoming slot.`)
+                                    return
+                                  }
                                   setBookingTime(slot.time)
                                   setSlotConflictMsg(null)
                                 }}
@@ -959,12 +1110,23 @@ export default function BookingPage({
                 </div>
 
                 <div className="booking-actions-row">
-                  <button type="submit" className="btn btn-gold sck-submit-booking-btn">
-                    Confirm Chair Reservation
+                  {submitErrorMsg && (
+                    <div className="sck-slot-conflict-alert" role="alert" style={{ width: '100%', marginBottom: '14px' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      <span>{submitErrorMsg}</span>
+                    </div>
+                  )}
+                  <button
+                    type="submit"
+                    className="btn btn-gold sck-submit-booking-btn"
+                    disabled={allSlotsUnavailable || isSubmitting}
+                  >
+                    {isSubmitting ? '✦ Securing Your Private Chair...' : 'Confirm Chair Reservation'}
                   </button>
-                  <p className="sck-booking-guarantee">
-                    ✦ Zero cancellation fees up to 24 hours prior · Personal diagnostic included
-                  </p>
                 </div>
               </form>
             </div>
@@ -1022,6 +1184,20 @@ export default function BookingPage({
                 <button
                   type="button"
                   className="btn btn-gold"
+                  onClick={handleDownloadCalendarEvent}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  Add to Calendar (.ics)
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline-gold"
                   onClick={() => {
                     setIsSubmitted(false)
                     setGuestName('')

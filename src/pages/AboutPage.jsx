@@ -23,28 +23,28 @@ export default function AboutPage({ onBookClick, onNavigate }) {
 
   return (
     <div className="sck-page sck-about-page">
-      {/* Photo Split Hero */}
+      {/* Photo Hero Header */}
       <section
-        className="sck-photo-hero sck-photo-hero-split"
+        className="sck-photo-hero"
         style={{ backgroundImage: "url('/images/heroes/about.jpg')" }}
       >
         <div className="sck-photo-hero-overlay" />
         <div className="sck-photo-hero-content">
-          <h1 className="sck-about-hero-tagline">
-            Crafted With Care,<br />Styled With Intention
-          </h1>
-          <div className="sck-about-hero-card">
-            <span className="sck-about-hero-card-eyebrow">About Us</span>
-            <h2 className="sck-about-hero-card-title">Rooted In Craft. Known For Care.</h2>
-            <p className="sck-about-hero-card-body">
+          <div className="sck-photo-hero-left">
+            <span className="sck-photo-hero-eyebrow">About Us</span>
+            <h1 className="sck-photo-hero-title">
+              Rooted In Craft.<br />Known For Care.
+            </h1>
+            <p className="sck-photo-hero-desc">
               Rooted in artisan craftsmanship and a genuine commitment to each guest, Barber Hub has built its reputation on Fifth Avenue by treating every appointment as a bespoke experience — never a routine one. Here, elevated technique and personalized care exist in equal measure, creating a space where expertise feels warm and luxury feels effortless.
             </p>
             <button
               type="button"
-              className="sck-about-hero-card-btn"
+              className="sck-photo-hero-btn"
               onClick={onBookClick}
             >
-              Book Now
+              <span>Book Appointment</span>
+              <span aria-hidden="true">→</span>
             </button>
           </div>
         </div>
