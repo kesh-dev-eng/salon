@@ -6,6 +6,7 @@ import {
   normalizeTimeStr,
   isTimeSlotBooked
 } from '../supabase'
+import { generateUniqueBookingCode, extractPhoneLast4 } from '../utils/bookingCode'
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -465,23 +466,32 @@ export default function BookingPage({
     }
 
     setIsSubmitting(true)
-    const code = 'HUB-' + Math.floor(100000 + Math.random() * 900000)
+    const code = generateUniqueBookingCode(guestName, guestPhone, '', effectiveBookings)
     setConfirmationCode(code)
 
     const newBooking = {
       id: 'bk-' + Date.now(),
       code: code,
       guestName: guestName.trim(),
+      client_name: guestName.trim(),
       guestPhone: guestPhone.trim(),
+      client_phone: guestPhone.trim(),
       guestNotes: guestNotes.trim(),
+      notes: guestNotes.trim(),
       serviceName: selectedService?.name || 'Cut & Styling',
+      service_name: selectedService?.name || 'Cut & Styling',
       servicePrice: formatPrice(selectedService?.price || 'Rs 150+'),
+      service_price: formatPrice(selectedService?.price || 'Rs 150+'),
       stylist: 'Fifth Avenue Master Stylist',
       date: bookingDate,
+      appointment_date: bookingDate,
       time: bookingTime,
+      appointment_time: bookingTime,
       isQuietChair: isQuietChair,
+      quiet_chair: isQuietChair,
       status: 'Confirmed',
-      createdAt: getLocalDateStr(new Date())
+      createdAt: getLocalDateStr(new Date()),
+      created_at: new Date().toISOString()
     }
 
     try {
@@ -1150,6 +1160,9 @@ export default function BookingPage({
                 >
                   {copiedCode ? '✓ Copied' : 'Copy Code'}
                 </button>
+              </div>
+              <div style={{ marginTop: '8px', fontSize: '0.84rem', color: 'rgba(255, 255, 255, 0.7)', textAlign: 'center', letterSpacing: '0.02em' }}>
+                Unique Personal Reference &bull; Identifies <strong style={{ color: 'var(--sck-gold-primary, #d4af37)' }}>{guestName}</strong> ({guestPhone ? `Ref: ..${extractPhoneLast4(guestPhone)}` : 'In-Salon Pass'})
               </div>
 
               <div className="confirmation-details-box">

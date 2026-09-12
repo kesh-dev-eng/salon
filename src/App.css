@@ -11669,3 +11669,166 @@ html, body {
     font-size: 18px !important;
   }
 }
+
+/* ========================================================= */
+/* ADMIN RESERVATION DOSSIER & SUBMISSION DATA DISPLAY */
+/* ========================================================= */
+.sck-dossier-modal {
+  max-width: 680px !important;
+  width: 94% !important;
+  border: 1px solid rgba(212, 175, 55, 0.35) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(212, 175, 55, 0.15) !important;
+  background: #151311 !important;
+}
+
+.sck-dossier-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.sck-dossier-section {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.sck-dossier-sec-title {
+  margin: 0 0 12px 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sck-gold-primary, #d4af37);
+  font-weight: 700;
+}
+
+.sck-dossier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.sck-dossier-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sck-dossier-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.sck-dossier-val-lg {
+  font-size: 1.15rem;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.sck-dossier-val {
+  font-size: 0.95rem;
+  color: #ffffff;
+}
+
+.sck-dossier-notes-box {
+  background: rgba(212, 175, 55, 0.06);
+  border-left: 3px solid var(--sck-gold-primary, #d4af37);
+  padding: 12px 14px;
+  border-radius: 0 6px 6px 0;
+}
+
+.sck-dossier-silent-badge {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.sck-dossier-silent-badge.is-active {
+  background: rgba(80, 200, 160, 0.1);
+  border-color: rgba(80, 200, 160, 0.35);
+  color: #a7f3d0;
+}
+
+.sck-dossier-silent-badge.is-standard {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sck-notes-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.sck-notes-tag.is-quiet {
+  background: rgba(72, 187, 120, 0.15);
+  color: #68d391;
+  border: 1px solid rgba(72, 187, 120, 0.35);
+}
+
+.sck-notes-tag.is-req {
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--sck-gold-primary, #d4af37);
+  margin-right: 4px;
+}
+
+.sck-table-special-requests {
+  margin-top: 5px;
+  font-size: 0.78rem;
+  color: rgba(240, 235, 220, 0.85);
+  font-style: italic;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgba(212, 175, 55, 0.06);
+  padding: 3px 6px;
+  border-radius: 4px;
+  border-left: 2px solid var(--sck-gold-primary, #d4af37);
+}
+
+.sck-table-special-requests .sck-req-label {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.7rem;
+  color: var(--sck-gold-primary, #d4af37);
+  margin-right: 3px;
+  text-transform: uppercase;
+}
+
+.sck-act-btn.is-details {
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--sck-gold-primary, #d4af37);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.sck-act-btn.is-details:hover {
+  background: var(--sck-gold-primary, #d4af37);
+  color: #12100e;
+}
+
+.sck-code-tag {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+  color: var(--sck-gold-primary, #d4af37);
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+

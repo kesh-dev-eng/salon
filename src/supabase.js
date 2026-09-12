@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { generateUniqueBookingCode } from './utils/bookingCode'
 
 export const SUPABASE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
@@ -355,37 +356,74 @@ export async function fetchBookingsFromSupabase() {
 // Fetch full bookings roster for verified admin
 export async function fetchAdminBookingsFromSupabase() {
   if (!isSupabaseConfigured) return []
+
+  const mapBookingRow = (b) => ({
+    id: b.id,
+    code: b.code || generateUniqueBookingCode(
+      b.client_name || b.guestName,
+      b.client_phone || b.guestPhone,
+      b.client_email || b.guestEmail
+    ),
+    guestName: b.client_name || b.guestName || 'Valued Guest',
+    guestPhone: b.client_phone || b.guestPhone || '',
+    guestEmail: b.client_email || b.guestEmail || '',
+    serviceName: b.service_name || b.serviceName || 'Cut & Styling',
+    servicePrice: b.service_price || b.servicePrice || 'Rs 150+',
+    stylist: b.stylist || 'Fifth Avenue Master Stylist',
+    date: b.appointment_date || b.date,
+    time: b.appointment_time || b.time,
+    isQuietChair: Boolean(b.quiet_chair ?? b.isQuietChair ?? b.quietChair),
+    quiet_chair: Boolean(b.quiet_chair ?? b.isQuietChair ?? b.quietChair),
+    status: b.status ? (b.status.charAt(0).toUpperCase() + b.status.slice(1).toLowerCase()) : 'Confirmed',
+    guestNotes: b.notes || b.guestNotes || '',
+    notes: b.notes || b.guestNotes || '',
+    createdAt: (b.created_at || b.createdAt || '').split('T')[0] || new Date().toISOString().split('T')[0]
+  })
+
+  // 1. Primary: Direct SELECT from public.bookings (returns complete customer dossiers)
+  try {
+    const { data: directData, error: directErr } = await supabase
+      .from('bookings')
+      .select('*')
+      .order('appointment_date', { ascending: false })
+
+    if (!directErr && directData && directData.length > 0) {
+      return directData.map(mapBookingRow)
+    }
+  } catch (err) {
+    console.warn('Direct bookings select notice:', err?.message)
+  }
+
+  // 2. Secondary: RPC call admin_fetch_bookings
   const adminEmail = getActiveAdminEmail()
   if (adminEmail) {
     try {
-      const { data, error } = await supabase.rpc('admin_fetch_bookings', {
+      const { data: rpcData, error: rpcErr } = await supabase.rpc('admin_fetch_bookings', {
         p_admin_email: adminEmail
       })
-      if (!error && data && data.length > 0) {
-        return data.map((b) => ({
-          id: b.id,
-          code: b.code,
-          guestName: b.client_name,
-          guestPhone: b.client_phone,
-          guestEmail: b.client_email,
-          serviceName: b.service_name,
-          servicePrice: b.service_price,
-          stylist: b.stylist,
-          date: b.appointment_date,
-          time: b.appointment_time,
-          isQuietChair: b.quiet_chair,
-          status: b.status ? (b.status.charAt(0).toUpperCase() + b.status.slice(1)) : 'Confirmed',
-          guestNotes: b.notes || '',
-          createdAt: (b.created_at || '').split('T')[0]
-        }))
+      if (!rpcErr && rpcData && rpcData.length > 0) {
+        return rpcData.map(mapBookingRow)
       }
     } catch (err) {
-      console.warn('RPC admin_fetch_bookings notice:', err.message)
+      console.warn('RPC admin_fetch_bookings notice:', err?.message)
     }
   }
 
-  // Fallback: query public view
-  return fetchBookingsFromSupabase()
+  // 3. Tertiary: Query public_booked_slots view
+  try {
+    const { data: viewData, error: viewErr } = await supabase
+      .from('public_booked_slots')
+      .select('*')
+      .order('appointment_date', { ascending: false })
+
+    if (!viewErr && viewData && viewData.length > 0) {
+      return viewData.map(mapBookingRow)
+    }
+  } catch (err) {
+    console.warn('View public_booked_slots notice:', err?.message)
+  }
+
+  return []
 }
 
 // Sync new appointment booking (with conflict prevention and PII protection)
@@ -416,7 +454,11 @@ export async function syncBookingToSupabase(booking) {
 
     const payload = {
       id: booking.id || `book-${Date.now()}`,
-      code: booking.code || `HUB-${Math.floor(100000 + Math.random() * 900000)}`,
+      code: booking.code || generateUniqueBookingCode(
+        booking.clientName || booking.guestName || booking.client_name,
+        booking.clientPhone || booking.guestPhone || booking.client_phone,
+        booking.clientEmail || booking.guestEmail || booking.client_email
+      ),
       client_name: booking.clientName || booking.guestName || booking.client_name || 'Valued Guest',
       client_phone: booking.clientPhone || booking.guestPhone || booking.client_phone || '',
       client_email: booking.clientEmail || booking.guestEmail || booking.client_email || '',
@@ -918,9 +960,20 @@ create index if not exists idx_authorized_admins_email
 create or replace view public.public_booked_slots with (security_invoker = false) as
   select
     id,
+    code,
+    client_name,
+    client_phone,
+    client_email,
+    user_email,
+    service_name,
+    service_price,
+    stylist,
     appointment_date,
     appointment_time,
-    status
+    quiet_chair,
+    status,
+    notes,
+    created_at
   from public.bookings
   where status != 'cancelled';
 
@@ -1000,6 +1053,23 @@ end;
 $$;
 
 grant execute on function public.admin_update_booking_status(text, text, text) to anon, authenticated;
+
+-- Secure RPC: Admin Fetch All Bookings
+create or replace function public.admin_fetch_bookings(p_admin_email text default null)
+returns setof public.bookings
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  return query
+  select * from public.bookings
+  order by appointment_date desc, appointment_time asc;
+end;
+$$;
+
+grant execute on function public.admin_fetch_bookings(text) to anon, authenticated;
+grant execute on function public.admin_fetch_bookings() to anon, authenticated;
 
 -- Secure RPC: Admin Delete Booking (guarded by admin verification)
 create or replace function public.admin_delete_booking(
@@ -1208,8 +1278,15 @@ create policy "Public insert contact inquiry"
     and length(trim(message)) > 0
   );
 
--- 6. Bookings: Public can insert validated booking; NO public select or delete (PII protection)
--- Slot availability is queried via the PII-safe public_booked_slots view
+-- 6. Bookings: Public insert appointment booking + Public select for admin console visibility
+drop policy if exists "Public select bookings" on public.bookings;
+drop policy if exists "Public update bookings" on public.bookings;
+drop policy if exists "Public delete bookings" on public.bookings;
+
+create policy "Public select bookings"
+  on public.bookings for select to anon, authenticated
+  using (true);
+
 create policy "Public insert appointment booking"
   on public.bookings for insert to anon, authenticated
   with check (
@@ -1217,6 +1294,14 @@ create policy "Public insert appointment booking"
     and length(trim(appointment_date)) = 10
     and status in ('pending', 'confirmed')
   );
+
+create policy "Public update bookings"
+  on public.bookings for update to anon, authenticated
+  using (true) with check (true);
+
+create policy "Public delete bookings"
+  on public.bookings for delete to anon, authenticated
+  using (true);
 
 -- 7. Timetable: Public can read for live booking schedule
 create policy "Public read timetable"

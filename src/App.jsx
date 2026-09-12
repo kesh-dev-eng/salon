@@ -14,7 +14,7 @@ import CareersPage from './pages/CareersPage'
 import BookingPage from './pages/BookingPage'
 import AdminPage from './pages/AdminPage'
 import Loader from './components/Loader'
-import { fetchTimetableFromSupabase, syncTimetableToSupabase } from './supabase'
+import { fetchTimetableFromSupabase, syncTimetableToSupabase, fetchAdminBookingsFromSupabase } from './supabase'
 import './App.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -130,6 +130,22 @@ export default function App() {
       if (cloudTimetable?.workingDays && Array.isArray(cloudTimetable.workingDays) && cloudTimetable.workingDays.length > 0) {
         setAtelierState((prev) => {
           const updated = { ...prev, timetable: cloudTimetable }
+          saveAtelierData(updated)
+          return updated
+        })
+      }
+    })
+
+    // Load cloud bookings on mount if available in Supabase
+    fetchAdminBookingsFromSupabase().then((cloudBookings) => {
+      if (cloudBookings && cloudBookings.length > 0) {
+        setAtelierState((prev) => {
+          const map = new Map()
+          cloudBookings.forEach((b) => map.set(b.id || b.code, b))
+          ;(prev.bookings || []).forEach((b) => {
+            if (!map.has(b.id || b.code)) map.set(b.id || b.code, b)
+          })
+          const updated = { ...prev, bookings: Array.from(map.values()) }
           saveAtelierData(updated)
           return updated
         })

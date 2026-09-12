@@ -27,6 +27,7 @@ import {
   normalizeTimeStr,
   fetchAdminBookingsFromSupabase
 } from '../supabase'
+import { generateUniqueBookingCode, parseBookingCode } from '../utils/bookingCode'
 
 export default function AdminPage({
   services = [],
@@ -244,6 +245,11 @@ export default function AdminPage({
   const [newBookingTime, setNewBookingTime] = useState('11:30 AM')
   const [newBookingQuiet, setNewBookingQuiet] = useState(false)
 
+  // Booking details modal state
+  const [selectedBookingDetail, setSelectedBookingDetail] = useState(null)
+  const [lastSyncTime, setLastSyncTime] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+  const [isSyncingBookings, setIsSyncingBookings] = useState(false)
+
   // Review modal & state
   const [isAddReviewModalOpen, setIsAddReviewModalOpen] = useState(false)
   const [newReviewAuthor, setNewReviewAuthor] = useState('')
@@ -285,23 +291,43 @@ export default function AdminPage({
     }
   }
 
-  const handleSyncCloudBookings = async () => {
-    showToast('Checking Supabase Cloud for bookings...')
-    const cloud = await fetchAdminBookingsFromSupabase()
-    if (cloud && cloud.length > 0 && setBookings) {
-      setBookings((prev) => {
-        const map = new Map()
-        cloud.forEach((b) => map.set(b.id || b.code, b))
-        prev.forEach((b) => {
-          if (!map.has(b.id || b.code)) map.set(b.id || b.code, b)
+  const handleSyncCloudBookings = async (silent = false) => {
+    if (!silent) showToast('Checking Supabase Cloud for latest reservations...')
+    setIsSyncingBookings(true)
+    try {
+      const cloud = await fetchAdminBookingsFromSupabase()
+      if (cloud && cloud.length > 0 && setBookings) {
+        setBookings((prev) => {
+          const map = new Map()
+          cloud.forEach((b) => map.set(b.id || b.code, b))
+          ;(prev || []).forEach((b) => {
+            if (!map.has(b.id || b.code)) map.set(b.id || b.code, b)
+          })
+          return Array.from(map.values())
         })
-        return Array.from(map.values())
-      })
-      showToast(`✓ Synced ${cloud.length} reservation(s) from Supabase Cloud`)
-    } else {
-      showToast('Database checked. All reservations up to date.')
+        setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+        if (!silent) showToast(`✓ Synced ${cloud.length} reservation(s) from Supabase Cloud`)
+      } else {
+        setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+        if (!silent) showToast('Database checked. All reservations up to date.')
+      }
+    } catch (err) {
+      console.warn('Sync bookings notice:', err)
+    } finally {
+      setIsSyncingBookings(false)
     }
   }
+
+  // Auto-sync reservations on mount and when entering bookings or overview tab
+  useEffect(() => {
+    handleSyncCloudBookings(true)
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'bookings' || activeTab === 'overview') {
+      handleSyncCloudBookings(true)
+    }
+  }, [activeTab])
 
   // --- Customer Contact & Quick Connect helpers ---
   const [copiedPhoneId, setCopiedPhoneId] = useState(null)
@@ -595,6 +621,7 @@ export default function AdminPage({
     setBookings((prev) =>
       prev.map((b) => (b.id === bookingId ? { ...b, status: newStatus } : b))
     )
+    setSelectedBookingDetail((prev) => (prev && prev.id === bookingId ? { ...prev, status: newStatus } : prev))
     updateBookingStatusInSupabase(bookingId, newStatus)
     showToast(`Appointment status updated to ${newStatus}`)
   }
@@ -603,6 +630,7 @@ export default function AdminPage({
     if (!setBookings) return
     if (window.confirm('Are you sure you want to remove this reservation?')) {
       setBookings((prev) => prev.filter((b) => b.id !== bookingId))
+      setSelectedBookingDetail((prev) => (prev && prev.id === bookingId ? null : prev))
       deleteBookingFromSupabase(bookingId)
       showToast('Appointment removed successfully')
     }
@@ -628,7 +656,7 @@ export default function AdminPage({
     const matchedService = services.find((s) => s.name === newBookingService)
     const newEntry = {
       id: `bk-${Date.now()}`,
-      code: `HUB-${Math.floor(100000 + Math.random() * 900000)}`,
+      code: generateUniqueBookingCode(newGuestName, newGuestPhone, newGuestEmail, bookings),
       guestName: newGuestName.trim(),
       guestPhone: newGuestPhone.trim() || 'In-Salon Walk-in',
       guestEmail: newGuestEmail.trim() || 'reception@salonhub.com',
@@ -1282,14 +1310,18 @@ export default function AdminPage({
                   <h2 className="sck-pane-title">Appointments &amp; Reservations</h2>
                   <p className="sck-pane-subtitle">Manage guest schedules, approve sessions, and record walk-ins.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                   <button
                     type="button"
                     className="sck-btn-ghost"
-                    onClick={handleSyncCloudBookings}
+                    onClick={() => handleSyncCloudBookings(false)}
+                    disabled={isSyncingBookings}
                     title="Fetch latest online bookings from Supabase Cloud"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                   >
-                    ↻ Sync Cloud
+                    <span style={{ display: 'inline-block', transform: isSyncingBookings ? 'rotate(180deg)' : 'none', transition: 'transform 0.4s ease' }}>↻</span>
+                    {isSyncingBookings ? 'Syncing...' : 'Sync Cloud'}
+                    {lastSyncTime && <span style={{ opacity: 0.6, fontSize: '0.75rem', marginLeft: '2px' }}>({lastSyncTime})</span>}
                   </button>
                   <button
                     type="button"
@@ -1546,9 +1578,15 @@ export default function AdminPage({
                                 <div className="sck-guest-sub">No phone provided</div>
                               )}
 
-                              {b.notes && (
+                              {(b.notes || b.guestNotes) && (
                                 <div className="sck-agenda-notes">
-                                  <em>&ldquo;{b.notes}&rdquo;</em>
+                                  <span className="sck-notes-tag is-req">Request:</span> <em>&ldquo;{b.notes || b.guestNotes}&rdquo;</em>
+                                </div>
+                              )}
+
+                              {(b.isQuietChair || b.quiet_chair) && (
+                                <div style={{ marginTop: '4px' }}>
+                                  <span className="sck-notes-tag is-quiet">🤫 Silent Chair Requested</span>
                                 </div>
                               )}
                             </div>
@@ -1565,6 +1603,14 @@ export default function AdminPage({
                             {/* Status Actions */}
                             <div className="sck-agenda-actions-box">
                               <div className="sck-status-action-btns">
+                                <button
+                                  type="button"
+                                  className="sck-act-btn is-details"
+                                  onClick={() => setSelectedBookingDetail(b)}
+                                  title="View full customer dossier"
+                                >
+                                  Details
+                                </button>
                                 <button
                                   type="button"
                                   className="sck-act-btn is-confirm"
@@ -1680,6 +1726,16 @@ export default function AdminPage({
                                     </a>
                                   </div>
                                 )}
+                                {(b.isQuietChair || b.quiet_chair) && (
+                                  <div style={{ marginTop: 4 }}>
+                                    <span className="sck-notes-tag is-quiet">🤫 Silent Chair</span>
+                                  </div>
+                                )}
+                                {(b.notes || b.guestNotes) && (
+                                  <div className="sck-table-special-requests" title={b.notes || b.guestNotes}>
+                                    <span className="sck-req-label">Req:</span> &ldquo;{b.notes || b.guestNotes}&rdquo;
+                                  </div>
+                                )}
                               </div>
                             </td>
                             <td>
@@ -1723,6 +1779,14 @@ export default function AdminPage({
                             </td>
                             <td>
                               <div className="sck-status-action-btns">
+                                <button
+                                  type="button"
+                                  className="sck-act-btn is-details"
+                                  onClick={() => setSelectedBookingDetail(b)}
+                                  title="View full customer submission dossier"
+                                >
+                                  Details
+                                </button>
                                 <button
                                   type="button"
                                   className="sck-act-btn is-confirm"
@@ -2339,6 +2403,217 @@ export default function AdminPage({
           )}
         </main>
       </div>
+
+      {/* ========================================================= */}
+      {/* MODAL: VIEW BOOKING DOSSIER / USER SUBMISSION DETAILS */}
+      {/* ========================================================= */}
+      {selectedBookingDetail && (
+        <div className="sck-modal-backdrop" onClick={() => setSelectedBookingDetail(null)}>
+          <div className="sck-modal-dialog sck-dossier-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="sck-modal-header">
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ margin: 0 }}>Reservation Dossier</h3>
+                  <span className={`sck-status-pill is-${(selectedBookingDetail.status || 'pending').toLowerCase()}`}>
+                    {selectedBookingDetail.status || 'Pending'}
+                  </span>
+                </div>
+                <p className="sck-modal-subtitle" style={{ margin: '4px 0 0', opacity: 0.85, fontSize: '0.82rem' }}>
+                  Reference: <strong className="sck-code-tag" style={{ color: 'var(--sck-gold-primary, #d4af37)', fontSize: '0.88rem' }}>{selectedBookingDetail.code || selectedBookingDetail.id}</strong>
+                  {(() => {
+                    const parsed = parseBookingCode(selectedBookingDetail.code)
+                    if (parsed) {
+                      return (
+                        <span style={{ marginLeft: 6, color: '#a7f3d0', fontSize: '0.78rem', background: 'rgba(80, 200, 160, 0.12)', padding: '2px 6px', borderRadius: '4px' }}>
+                          ✓ Recognized User: {parsed.initials} &bull; ..{parsed.userPhoneRef}
+                        </span>
+                      )
+                    }
+                    return null
+                  })()}
+                  {selectedBookingDetail.createdAt && ` · Submitted ${new Date(selectedBookingDetail.createdAt).toLocaleString()}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="sck-modal-close"
+                onClick={() => setSelectedBookingDetail(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="sck-dossier-body">
+              {/* Client Info Card */}
+              <div className="sck-dossier-section">
+                <h4 className="sck-dossier-sec-title">Client Contact &amp; Profile</h4>
+                <div className="sck-dossier-grid">
+                  <div className="sck-dossier-item">
+                    <span className="sck-dossier-label">Full Name</span>
+                    <strong className="sck-dossier-val-lg">{selectedBookingDetail.guestName || selectedBookingDetail.client_name || 'Guest'}</strong>
+                  </div>
+                  <div className="sck-dossier-item">
+                    <span className="sck-dossier-label">Mobile (WhatsApp)</span>
+                    <div className="sck-dossier-phone-row">
+                      <strong className="sck-dossier-val">{selectedBookingDetail.guestPhone || selectedBookingDetail.client_phone || 'None'}</strong>
+                      {(selectedBookingDetail.guestPhone || selectedBookingDetail.client_phone) && (
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                          <a
+                            href={`https://wa.me/${formatCleanWhatsApp(selectedBookingDetail.guestPhone || selectedBookingDetail.client_phone)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="sck-contact-chip is-wa"
+                            title="Open direct WhatsApp conversation"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: 4 }}>
+                              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                            </svg>
+                            WhatsApp
+                          </a>
+                          <a
+                            href={`tel:${selectedBookingDetail.guestPhone || selectedBookingDetail.client_phone}`}
+                            className="sck-contact-chip is-copy"
+                          >
+                            Call
+                          </a>
+                          <button
+                            type="button"
+                            className="sck-contact-chip is-copy"
+                            onClick={() => handleCopyPhone(selectedBookingDetail.id, selectedBookingDetail.guestPhone || selectedBookingDetail.client_phone)}
+                          >
+                            {copiedPhoneId === selectedBookingDetail.id ? '✓ Copied' : 'Copy'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {selectedBookingDetail.guestEmail && (
+                    <div className="sck-dossier-item">
+                      <span className="sck-dossier-label">Email Address</span>
+                      <a href={`mailto:${selectedBookingDetail.guestEmail}`} style={{ color: 'var(--sck-gold-primary, #d4af37)', textDecoration: 'none' }}>
+                        {selectedBookingDetail.guestEmail}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Special Requests / Hair Goals */}
+              <div className="sck-dossier-section">
+                <h4 className="sck-dossier-sec-title">Special Requests / Hair Goals</h4>
+                {(selectedBookingDetail.notes || selectedBookingDetail.guestNotes) ? (
+                  <div className="sck-dossier-notes-box">
+                    <p style={{ margin: 0, fontStyle: 'italic', fontSize: '0.95rem', lineHeight: 1.5, color: '#f5f5f5' }}>
+                      &ldquo;{selectedBookingDetail.notes || selectedBookingDetail.guestNotes}&rdquo;
+                    </p>
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, opacity: 0.5, fontStyle: 'italic', fontSize: '0.88rem' }}>
+                    No special requests or hair transformation goals specified by guest.
+                  </p>
+                )}
+
+                {/* Silent Chair Feature Indicator */}
+                <div style={{ marginTop: '12px' }}>
+                  {(selectedBookingDetail.isQuietChair || selectedBookingDetail.quiet_chair) ? (
+                    <div className="sck-dossier-silent-badge is-active">
+                      <span style={{ fontSize: '1.2rem', marginRight: '8px' }}>🤫</span>
+                      <div>
+                        <strong>Silent Chair Requested</strong>
+                        <div style={{ fontSize: '0.8rem', opacity: 0.85, marginTop: '2px' }}>
+                          Guest requested minimal dialogue for deep acoustic relaxation &amp; tranquility.
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="sck-dossier-silent-badge is-standard">
+                      <span style={{ fontSize: '1rem', marginRight: '8px' }}>💬</span>
+                      <div>
+                        <strong style={{ opacity: 0.75 }}>Standard Consultation Chair</strong>
+                        <div style={{ fontSize: '0.78rem', opacity: 0.55, marginTop: '1px' }}>
+                          Standard salon conversation &amp; consultation preferred.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Service & Appointment Details */}
+              <div className="sck-dossier-section">
+                <h4 className="sck-dossier-sec-title">Treatment &amp; Schedule</h4>
+                <div className="sck-dossier-grid">
+                  <div className="sck-dossier-item">
+                    <span className="sck-dossier-label">Treatment Service</span>
+                    <strong style={{ fontSize: '1.05rem', color: '#fff' }}>{selectedBookingDetail.serviceName || selectedBookingDetail.service_name}</strong>
+                  </div>
+                  <div className="sck-dossier-item">
+                    <span className="sck-dossier-label">Rate / Reservation Estimate</span>
+                    <span className="sck-price-badge">{formatPrice(selectedBookingDetail.servicePrice || selectedBookingDetail.service_price)}</span>
+                  </div>
+                  <div className="sck-dossier-item">
+                    <span className="sck-dossier-label">Stylist &amp; Station</span>
+                    <span>{selectedBookingDetail.stylist || 'Barber Hub Dedicated Chair'}</span>
+                  </div>
+                  <div className="sck-dossier-item">
+                    <span className="sck-dossier-label">Scheduled Date &amp; Time</span>
+                    <strong>{selectedBookingDetail.date} at {selectedBookingDetail.time}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions Footer */}
+            <div className="sck-modal-actions" style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="sck-btn-ghost"
+                  onClick={() => handleUpdateBookingStatus(selectedBookingDetail.id, 'Confirmed')}
+                >
+                  ✓ Confirm
+                </button>
+                <button
+                  type="button"
+                  className="sck-btn-ghost"
+                  onClick={() => handleUpdateBookingStatus(selectedBookingDetail.id, 'Completed')}
+                >
+                  Mark Completed
+                </button>
+                <button
+                  type="button"
+                  className="sck-btn-ghost"
+                  style={{ color: '#e57373' }}
+                  onClick={() => handleUpdateBookingStatus(selectedBookingDetail.id, 'Cancelled')}
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {(selectedBookingDetail.guestPhone || selectedBookingDetail.client_phone) && (
+                  <a
+                    href={`https://wa.me/${formatCleanWhatsApp(selectedBookingDetail.guestPhone || selectedBookingDetail.client_phone)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="sck-btn-teal"
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    Contact on WhatsApp →
+                  </a>
+                )}
+                <button
+                  type="button"
+                  className="sck-btn-ghost"
+                  onClick={() => setSelectedBookingDetail(null)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================= */}
       {/* MODAL: ADD WALK-IN RESERVATION */}
