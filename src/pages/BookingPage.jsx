@@ -78,6 +78,7 @@ function calculateEndTime(startTimeStr, durationStr = '60 min') {
 export default function BookingPage({
   services = INITIAL_SERVICES,
   bookings = [],
+  preselectedService = null,
   onBookSuccess,
   onNavigate
 }) {
@@ -110,8 +111,16 @@ export default function BookingPage({
     return Array.from(map.values())
   }, [bookings, cloudBookings])
 
-  // Read service or stylist from URL query parameters if present
+  // Read service or stylist from URL query parameters or preselectedService prop if present
   const [selectedService, setSelectedService] = useState(() => {
+    if (preselectedService) {
+      const match = services.find(
+        (s) => s.name.toLowerCase() === preselectedService.toLowerCase() ||
+               s.category.toLowerCase() === preselectedService.toLowerCase() ||
+               s.id === preselectedService
+      )
+      if (match) return match
+    }
     try {
       const params = new URLSearchParams(window.location.search)
       const queryServiceName = params.get('service')
@@ -127,6 +136,18 @@ export default function BookingPage({
     }
     return services[0] || null
   })
+
+  // Synchronize when preselectedService changes
+  useEffect(() => {
+    if (preselectedService) {
+      const match = services.find(
+        (s) => s.name.toLowerCase() === preselectedService.toLowerCase() ||
+               s.category.toLowerCase() === preselectedService.toLowerCase() ||
+               s.id === preselectedService
+      )
+      if (match) setSelectedService(match)
+    }
+  }, [preselectedService, services])
 
   // Date states
   const today = useMemo(() => new Date(), [])

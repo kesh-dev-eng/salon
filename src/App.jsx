@@ -144,13 +144,15 @@ export default function App() {
     return 'home'
   })
 
-  // Open dedicated booking page in a new browser tab
+  const [bookingPreselectedService, setBookingPreselectedService] = useState(null)
+
+  // Navigate to booking page smoothly in the same tab, with optional preselected service
   const openBookingTab = (serviceName = null) => {
-    let url = '/booking'
+    setBookingPreselectedService(serviceName || null)
+    navigateTo('booking')
     if (serviceName) {
-      url += `?service=${encodeURIComponent(serviceName)}`
+      window.history.pushState(null, '', `/booking?service=${encodeURIComponent(serviceName)}`)
     }
-    window.open(url, '_blank', 'noopener,noreferrer')
   }
   const [activeServiceCategory, setActiveServiceCategory] = useState(() => {
     try {
@@ -688,13 +690,15 @@ export default function App() {
 
           {/* Right Action Buttons */}
           <div className="sck-actions">
-            {/* Book Now Button — Opens in New Tab */}
+            {/* Book Now Button */}
             <a
               href="/booking"
-              target="_blank"
-              rel="noopener noreferrer"
               className="sck-btn-teal sck-book-btn"
               style={{ textDecoration: 'none' }}
+              onClick={(e) => {
+                e.preventDefault()
+                openBookingTab()
+              }}
             >
               Book Now
             </a>
@@ -922,9 +926,11 @@ export default function App() {
         <div className="mobile-drawer-actions">
           <a
             href="/booking"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setIsMobileNavOpen(false)}
+            onClick={(e) => {
+              e.preventDefault()
+              setIsMobileNavOpen(false)
+              openBookingTab()
+            }}
             className="sck-btn-teal"
             style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: '14px', textAlign: 'center', textDecoration: 'none' }}
           >
@@ -1205,6 +1211,7 @@ export default function App() {
           <BookingPage
             services={services}
             bookings={bookings}
+            preselectedService={bookingPreselectedService}
             onBookSuccess={(newBooking) => {
               setBookings((prev) => [newBooking, ...prev])
             }}
@@ -1250,7 +1257,7 @@ export default function App() {
                 <a href="/contact" onClick={(e) => { e.preventDefault(); navigateTo('contact') }}>Contact &amp; Hours</a>
                 <a href="/policy" onClick={(e) => { e.preventDefault(); navigateTo('policy') }}>Salon Policy</a>
                 <a href="/careers" onClick={(e) => { e.preventDefault(); navigateTo('careers') }}>Careers</a>
-                <a href="/booking" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)' }}>Book Online ↗</a>
+                <a href="/booking" onClick={(e) => { e.preventDefault(); openBookingTab() }} style={{ color: 'var(--gold)' }}>Book Online</a>
               </div>
 
               <div className="footer-col-info">
@@ -1270,8 +1277,10 @@ export default function App() {
           {/* FLOATING MOBILE BOOKING BUTTON */}
           <a
             href="/booking"
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.preventDefault()
+              openBookingTab()
+            }}
             className="floating-mobile-book"
             aria-label="Book Chair"
             style={{ textDecoration: 'none' }}
