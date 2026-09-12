@@ -171,7 +171,7 @@ export const INITIAL_REVIEWS = [
   {
     id: 'rev-1',
     stars: '★★★★★',
-    quote: "I have been a client of Salon HUB since they opened. They are the best. I won't go anywhere else. My hair is curly and they do an amazing job. Always have",
+    quote: "I have been a client of Barber Hub since they opened. They are the best. I won't go anywhere else. My hair is curly and they do an amazing job. Always have",
     author: 'Carolyn Pianin',
     service: 'Cut & Styling'
   },
@@ -185,7 +185,7 @@ export const INITIAL_REVIEWS = [
   {
     id: 'rev-3',
     stars: '★★★★★',
-    quote: "I hadn't had my naturally very dark hair colored in a very long time, but I took the plunge with Kelly at Salon HUB and it was the best decision! Kelly gave me a thorough consultation and along with Devin they made sure my cut and color work in perfect harmony.",
+    quote: "I hadn't had my naturally very dark hair colored in a very long time, but I took the plunge with Kelly at Barber Hub and it was the best decision! Kelly gave me a thorough consultation and along with Devin they made sure my cut and color work in perfect harmony.",
     author: 'Vanessa Moreno',
     service: 'Color'
   },
@@ -199,7 +199,7 @@ export const INITIAL_REVIEWS = [
   {
     id: 'rev-5',
     stars: '★★★★★',
-    quote: "Salon HUB is such a wonderful experience! The salon is beautiful, exquisitely clean, and packed with highly talented artists! Clint does my cut..a perfectionist! Kelly does my color…very natural!",
+    quote: "Barber Hub is such a wonderful experience! The atelier is beautiful, exquisitely clean, and packed with highly talented artists! Clint does my cut..a perfectionist! Kelly does my color…very natural!",
     author: 'Donna Mazur',
     service: 'Cut & Color'
   },

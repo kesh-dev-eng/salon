@@ -29,10 +29,10 @@ export default function BlogPage({ onBookClick }) {
           <div className="sck-photo-hero-left">
             <span className="sck-photo-hero-eyebrow">The Editorial Journal</span>
             <h1 className="sck-photo-hero-title">
-              The Journal Of Salon<br />HUB
+              The Journal Of Barber<br />Hub
             </h1>
             <p className="sck-photo-hero-desc">
-              From artisan color techniques to bridal hair inspiration for NYC brides, Salon HUB shares NYC hair styling tips and the expertise that shapes every chair on Fifth Avenue. Real insights, refined perspective, and the beauty knowledge New York deserves.
+              From precision grooming techniques to styling inspiration for NYC gentlemen and brides, Barber Hub shares NYC styling tips and the expertise that shapes every chair on Fifth Avenue. Real insights, refined perspective, and the beauty knowledge New York deserves.
             </p>
             <button
               type="button"

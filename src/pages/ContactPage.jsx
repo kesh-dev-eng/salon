@@ -39,7 +39,7 @@ export default function ContactPage({ onBookClick }) {
               Visit Our Fifth Avenue<br />Salon
             </h1>
             <p className="sck-photo-hero-desc">
-              Located at 587 Fifth Avenue in Midtown Manhattan, Salon HUB is your private haven for bespoke color, precision cuts, and bridal artistry.
+              Located at 587 Fifth Avenue in Midtown Manhattan, Barber Hub is your private haven for bespoke color, precision cuts, and bridal artistry.
             </p>
             <button
               type="button"
@@ -60,7 +60,7 @@ export default function ContactPage({ onBookClick }) {
             {/* Left: Contact Info & Hours */}
             <div className="sck-contact-info-col">
               <div className="sck-contact-info-card">
-                <h2 className="sck-contact-card-title">Salon HUB Location</h2>
+                <h2 className="sck-contact-card-title">Barber Hub Location</h2>
                 <div className="sck-info-item">
                   <div className="sck-info-icon">📍</div>
                   <div className="sck-info-content">
@@ -82,7 +82,7 @@ export default function ContactPage({ onBookClick }) {
                   <div className="sck-info-icon">✉️</div>
                   <div className="sck-info-content">
                     <span className="sck-info-label">Email</span>
-                    <a href="mailto:info@salonhub.com" className="sck-info-link">info@salonhub.com</a>
+                    <a href="mailto:info@barberhub.com" className="sck-info-link">info@barberhub.com</a>
                   </div>
                 </div>
 
@@ -121,7 +121,7 @@ export default function ContactPage({ onBookClick }) {
                 {isSubmitted ? (
                   <div className="sck-form-success-box">
                     <div className="sck-success-check">✓</div>
-                    <h3>Thank You for Contacting Salon HUB</h3>
+                    <h3>Thank You for Contacting Barber Hub</h3>
                     <p>
                       We have received your message. A member of our Fifth Avenue team will reach out to you within one business day.
                     </p>

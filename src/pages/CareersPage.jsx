@@ -46,7 +46,7 @@ export default function CareersPage() {
           <div className="sck-photo-hero-left">
             <span className="sck-photo-hero-eyebrow">Join Our Team</span>
             <h1 className="sck-photo-hero-title">
-              Join The Salon HUB<br />Atelier
+              Join The Barber Hub<br />Atelier
             </h1>
             <p className="sck-photo-hero-desc">
               We are always seeking passionate, world-class hair artists, apprentices, and guest experience coordinators who take pride in artisan technique and attentive care.
@@ -75,16 +75,16 @@ export default function CareersPage() {
           </div>
 
           <div className="sck-career-apply-card">
-            <h2 className="sck-contact-card-title">Apply to Salon HUB</h2>
+            <h2 className="sck-contact-card-title">Apply to Barber Hub</h2>
             <p className="sck-form-subtitle">
-              Submit your portfolio and details below or email your resume directly to <a href="mailto:careers@salonhub.com">careers@salonhub.com</a>.
+              Submit your portfolio and details below or email your resume directly to <a href="mailto:careers@barberhub.com">careers@barberhub.com</a>.
             </p>
 
             {submitted ? (
               <div className="sck-form-success-box">
                 <div className="sck-success-check">✓</div>
                 <h3>Application Received</h3>
-                <p>Thank you for your interest in Salon HUB. Our management team will review your credentials and contact you shortly.</p>
+                <p>Thank you for your interest in Barber Hub. Our management team will review your credentials and contact you shortly.</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="sck-contact-form">

@@ -1,10 +1,77 @@
 -- ==============================================================================
--- SALON HUB — DATABASE UPDATE MIGRATION SCRIPT
+-- BARBER HUB — DATABASE UPDATE MIGRATION SCRIPT
 -- Run this in your Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/abresbnxhfhtpwnanfcn/sql
 -- ==============================================================================
 
--- 1. CREATE TIMETABLE & OPERATING HOURS TABLE
+-- 1. AUTHORIZED ADMINS TABLE & SEED
+create table if not exists public.authorized_admins (
+  id text primary key,
+  email text unique not null,
+  name text,
+  role text default 'admin',
+  is_active boolean default true,
+  created_at timestamptz default now()
+);
+
+insert into public.authorized_admins (id, email, name, role, is_active)
+values
+  ('admin-keshav', 'keshavsharma00007@gmail.com', 'Keshav Sharma (Owner)', 'super_admin', true),
+  ('admin-master', 'admin@barberhub.com', 'Barber Hub Master Admin', 'super_admin', true),
+  ('admin-director', 'director@barberhub.com', 'Elena Vance', 'manager', true),
+  ('admin-salon', 'admin@salonhub.com', 'Salon Hub Admin', 'super_admin', true)
+on conflict (id) do update
+set email = excluded.email,
+    name = excluded.name,
+    role = excluded.role,
+    is_active = excluded.is_active;
+
+-- 2. APPOINTMENT RESERVATIONS / BOOKINGS TABLE & COLUMNS
+create table if not exists public.bookings (
+  id text primary key,
+  code text,
+  client_name text not null,
+  client_phone text,
+  client_email text,
+  user_email text,
+  service_name text not null,
+  service_price text,
+  stylist text default 'Fifth Avenue Master Stylist',
+  appointment_date text not null,
+  appointment_time text not null,
+  quiet_chair boolean default false,
+  status text default 'pending',
+  notes text,
+  created_at timestamptz default now()
+);
+
+alter table public.bookings add column if not exists code text;
+alter table public.bookings add column if not exists client_name text;
+alter table public.bookings add column if not exists client_phone text;
+alter table public.bookings add column if not exists client_email text;
+alter table public.bookings add column if not exists user_email text;
+alter table public.bookings add column if not exists service_name text;
+alter table public.bookings add column if not exists service_price text;
+alter table public.bookings add column if not exists stylist text default 'Fifth Avenue Master Stylist';
+alter table public.bookings add column if not exists appointment_date text;
+alter table public.bookings add column if not exists appointment_time text;
+alter table public.bookings add column if not exists quiet_chair boolean default false;
+alter table public.bookings add column if not exists status text default 'pending';
+alter table public.bookings add column if not exists notes text;
+alter table public.bookings add column if not exists created_at timestamptz default now();
+
+-- 3. CONCIERGE CONTACT INQUIRIES TABLE
+create table if not exists public.contacts (
+  id text primary key,
+  name text not null,
+  email text not null,
+  phone text,
+  service text,
+  message text not null,
+  created_at timestamptz default now()
+);
+
+-- 4. TIMETABLE TABLE
 create table if not exists public.timetable (
   id text primary key default 'default',
   working_days jsonb not null,
@@ -13,27 +80,232 @@ create table if not exists public.timetable (
   updated_at timestamptz default now()
 );
 
--- 2. ENABLE ROW LEVEL SECURITY (RLS) ON TIMETABLE
+-- 5. REVIEWS TABLE
+create table if not exists public.reviews (
+  id text primary key,
+  author text not null,
+  role text default 'Patron',
+  stars text default '★★★★★',
+  rating integer default 5,
+  service text,
+  quote text not null,
+  created_at timestamptz default now()
+);
+
+-- ==============================================================================
+-- ROW LEVEL SECURITY (RLS) POLICIES
+-- ==============================================================================
+alter table public.authorized_admins enable row level security;
+alter table public.bookings enable row level security;
+alter table public.contacts enable row level security;
+alter table public.reviews enable row level security;
 alter table public.timetable enable row level security;
 
--- Drop existing policies if re-running (idempotent)
-drop policy if exists "Allow all operations on timetable" on public.timetable;
+-- Bookings RLS
+drop policy if exists "Public insert appointment booking" on public.bookings;
+drop policy if exists "Client view own booking by code" on public.bookings;
+drop policy if exists "Admin manage bookings" on public.bookings;
+
+create policy "Public insert appointment booking"
+  on public.bookings for insert to anon, authenticated
+  with check (true);
+
+create policy "Client view own booking by code"
+  on public.bookings for select to anon, authenticated
+  using (code is not null or id is not null);
+
+create policy "Admin manage bookings"
+  on public.bookings for all to authenticated
+  using (true) with check (true);
+
+-- Contacts RLS
+drop policy if exists "Public insert contact inquiry" on public.contacts;
+drop policy if exists "Admin manage contacts" on public.contacts;
+
+create policy "Public insert contact inquiry"
+  on public.contacts for insert to anon, authenticated
+  with check (true);
+
+create policy "Admin manage contacts"
+  on public.contacts for all to authenticated
+  using (true) with check (true);
+
+-- Timetable RLS
 drop policy if exists "Public read timetable" on public.timetable;
 drop policy if exists "Admin manage timetable" on public.timetable;
 
--- 3. RLS POLICIES FOR TIMETABLE
--- Public can read live schedule & available booking slots
 create policy "Public read timetable"
   on public.timetable for select to anon, authenticated
   using (true);
 
--- Authenticated admins have full management permissions
 create policy "Admin manage timetable"
   on public.timetable for all to authenticated
   using (true) with check (true);
 
--- 4. SECURE RPC: ADMIN UPDATE TIMETABLE
--- Allows verified administrator to update weekly operating hours and reservation slots
+-- Reviews RLS
+drop policy if exists "Public read reviews" on public.reviews;
+drop policy if exists "Public insert validated review" on public.reviews;
+drop policy if exists "Admin manage reviews" on public.reviews;
+
+create policy "Public read reviews"
+  on public.reviews for select to anon, authenticated
+  using (true);
+
+create policy "Public insert validated review"
+  on public.reviews for insert to anon, authenticated
+  with check (true);
+
+create policy "Admin manage reviews"
+  on public.reviews for all to authenticated
+  using (true) with check (true);
+
+-- ==============================================================================
+-- PII-SAFE RESERVATION SLOTS VIEW
+-- ==============================================================================
+create or replace view public.public_booked_slots with (security_invoker = false) as
+  select
+    id,
+    appointment_date,
+    appointment_time,
+    status
+  from public.bookings
+  where status != 'cancelled';
+
+grant select on public.public_booked_slots to anon, authenticated;
+
+-- ==============================================================================
+-- SECURITY DEFINER RPC FUNCTIONS FOR ADMIN OPERATIONS
+-- ==============================================================================
+create or replace function public.is_active_admin(check_email text)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.authorized_admins
+    where lower(trim(email)) = lower(trim(check_email))
+      and is_active = true
+  );
+$$;
+
+grant execute on function public.is_active_admin(text) to anon, authenticated;
+
+create or replace function public.verify_admin_email(check_email text)
+returns table (
+  is_authorized boolean,
+  admin_id text,
+  email text,
+  name text,
+  role text
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  return query
+  select
+    true as is_authorized,
+    a.id as admin_id,
+    a.email,
+    a.name,
+    a.role
+  from public.authorized_admins a
+  where lower(trim(a.email)) = lower(trim(check_email))
+    and a.is_active = true
+  limit 1;
+end;
+$$;
+
+grant execute on function public.verify_admin_email(text) to anon, authenticated;
+
+create or replace function public.admin_fetch_bookings(p_admin_email text)
+returns setof public.bookings
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_active_admin(p_admin_email) then
+    raise exception 'Unauthorized: % is not an active administrator', p_admin_email;
+  end if;
+
+  return query
+  select * from public.bookings
+  order by appointment_date desc, appointment_time asc;
+end;
+$$;
+
+grant execute on function public.admin_fetch_bookings(text) to anon, authenticated;
+
+create or replace function public.admin_fetch_contacts(p_admin_email text)
+returns setof public.contacts
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_active_admin(p_admin_email) then
+    raise exception 'Unauthorized: % is not an active administrator', p_admin_email;
+  end if;
+
+  return query
+  select * from public.contacts
+  order by created_at desc;
+end;
+$$;
+
+grant execute on function public.admin_fetch_contacts(text) to anon, authenticated;
+
+create or replace function public.admin_update_booking_status(
+  p_admin_email text,
+  p_booking_id text,
+  p_status text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_active_admin(p_admin_email) then
+    raise exception 'Unauthorized: % is not an active administrator', p_admin_email;
+  end if;
+
+  update public.bookings
+  set status = p_status
+  where id = p_booking_id;
+
+  return true;
+end;
+$$;
+
+grant execute on function public.admin_update_booking_status(text, text, text) to anon, authenticated;
+
+create or replace function public.admin_delete_booking(
+  p_admin_email text,
+  p_booking_id text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_active_admin(p_admin_email) then
+    raise exception 'Unauthorized: % is not an active administrator', p_admin_email;
+  end if;
+
+  delete from public.bookings
+  where id = p_booking_id;
+
+  return true;
+end;
+$$;
+
+grant execute on function public.admin_delete_booking(text, text) to anon, authenticated;
+
 create or replace function public.admin_update_timetable(
   p_admin_email text,
   p_working_days jsonb,
@@ -63,48 +335,3 @@ end;
 $$;
 
 grant execute on function public.admin_update_timetable(text, jsonb, jsonb, text) to anon, authenticated;
-
--- 5. SEED STANDARD SALON TIMETABLE & WORKING HOURS
-insert into public.timetable (id, working_days, time_slots, notice)
-values (
-  'default',
-  '[
-    {"day": "Sun", "name": "Sunday", "isOpen": false, "openTime": "Closed", "closeTime": "Closed"},
-    {"day": "Mon", "name": "Monday", "isOpen": true, "openTime": "09:00 AM", "closeTime": "07:00 PM"},
-    {"day": "Tue", "name": "Tuesday", "isOpen": true, "openTime": "09:00 AM", "closeTime": "07:00 PM"},
-    {"day": "Wed", "name": "Wednesday", "isOpen": true, "openTime": "09:00 AM", "closeTime": "07:00 PM"},
-    {"day": "Thu", "name": "Thursday", "isOpen": true, "openTime": "09:00 AM", "closeTime": "07:00 PM"},
-    {"day": "Fri", "name": "Friday", "isOpen": true, "openTime": "09:00 AM", "closeTime": "07:00 PM"},
-    {"day": "Sat", "name": "Saturday", "isOpen": true, "openTime": "09:00 AM", "closeTime": "06:00 PM"}
-  ]'::jsonb,
-  '[
-    {"id": "t1", "time": "09:30 AM", "period": "morning", "label": "Morning Light", "badge": "Available", "active": true},
-    {"id": "t2", "time": "10:30 AM", "period": "morning", "label": "Morning High", "badge": "Popular", "active": true},
-    {"id": "t3", "time": "11:30 AM", "period": "morning", "label": "Midday Prime", "badge": "Prime", "active": true},
-    {"id": "t4", "time": "01:00 PM", "period": "afternoon", "label": "Early Afternoon", "badge": "Available", "active": true},
-    {"id": "t5", "time": "02:15 PM", "period": "afternoon", "label": "Mid Afternoon", "badge": "Popular", "active": true},
-    {"id": "t6", "time": "03:30 PM", "period": "afternoon", "label": "Late Afternoon", "badge": "Available", "active": true},
-    {"id": "t7", "time": "04:30 PM", "period": "afternoon", "label": "Sunset Glow", "badge": "Prime", "active": true},
-    {"id": "t8", "time": "05:30 PM", "period": "evening", "label": "Fifth Ave Twilight", "badge": "Available", "active": true},
-    {"id": "t9", "time": "06:30 PM", "period": "evening", "label": "Evening Couture", "badge": "Peak Slot", "active": true},
-    {"id": "t10", "time": "07:15 PM", "period": "evening", "label": "Late Salon Session", "badge": "VIP Evening", "active": true}
-  ]'::jsonb,
-  'All appointments are private 1-on-1 sessions with dedicated master stylists.'
-)
-on conflict (id) do update
-set working_days = excluded.working_days,
-    time_slots = excluded.time_slots,
-    notice = excluded.notice,
-    updated_at = now();
-
--- 6. ENSURE CATALOG SERVICES ARE SEEDED
-insert into public.services (id, num, category, name, price, price_num, duration, tag, img, "desc")
-values
-  ('s1', '01', 'cut', 'Cut & Styling', 'Rs 150+', 150, '60 min', 'Hair', '/images/services/cut-styling.jpg', 'From precision haircuts tailored to your individual look to polished blowouts and elegant updos, every cut and styling service is crafted to bring out the best in your hair.'),
-  ('s2', '02', 'color', 'Color', 'Rs 220+', 220, '120 min', 'Color', '/images/services/color.jpg', 'From rich single-process color to expertly crafted balayage and highlights, our color services are tailored to complement your unique look by master colorists.'),
-  ('s3', '03', 'treatments', 'Conditioning Hair Treatments', 'Rs 95+', 95, '45 min', 'Care', '/images/services/conditioning.jpg', 'Restore softness, strength, and luminosity with luxury formulas from Kérastase, Shu Uemura, and Olaplex, leaving you with a healthier, radiant result.'),
-  ('s4', '04', 'makeup', 'Makeup', 'Rs 125+', 125, '60 min', 'Beauty', '/images/services/makeup.jpg', 'From custom blended makeup application and lash enhancements to eyebrow shaping and personalized lessons, designed to complement and elevate your full look.'),
-  ('s5', '05', 'bridal', 'Bridal', 'Rs 350+', 350, '180 min', 'Occasion', '/images/services/bridal.jpg', 'From your bridal trial to the moment you walk down the aisle, offering both in-salon and on-location hair services tailored to your wedding vision.'),
-  ('s6', '06', 'perms', 'Perms & Relaxer', 'Rs 200+', 200, '120 min', 'Texture', '/images/services/perms-relaxer.jpg', 'Whether you are looking to add lasting curl definition with a perm or achieve smooth, manageable results with a relaxer, tailored to your hair texture.'),
-  ('s7', '07', 'nails', 'Nails', 'Rs 65+', 65, '50 min', 'Nails', '/images/services/nails.jpg', 'From a classic manicure to gel, Dazzle Dry, powder gel, and beyond, luxury nail services designed to leave your hands and feet looking polished and refined.')
-on conflict (id) do nothing;

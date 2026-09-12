@@ -31,9 +31,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 // Connection test helper
 export async function testSupabaseConnection() {
   try {
-    const { data, error } = await supabase.auth.getSession()
+    const { error } = await supabase.from('services').select('id').limit(1)
     if (error) throw error
-    return { ok: true, message: 'Connected to Supabase Cloud' }
+    return { ok: true, message: 'Connected to Supabase Cloud (PostgreSQL Active & Responsive)' }
   } catch (err) {
     console.warn('Supabase ping check:', err)
     return { ok: false, error: err.message || 'Connection failed' }
@@ -46,17 +46,33 @@ export async function testSupabaseConnection() {
 export const DEFAULT_AUTHORIZED_ADMINS = [
   {
     id: 'admin-master',
-    email: 'admin@salonhub.com',
-    name: 'Salon HUB Master Admin',
+    email: 'admin@barberhub.com',
+    name: 'Barber Hub Master Admin',
     role: 'super_admin',
     is_active: true,
     created_at: new Date().toISOString()
   },
   {
     id: 'admin-director',
-    email: 'director@salonhub.com',
+    email: 'director@barberhub.com',
     name: 'Elena Vance',
     role: 'manager',
+    is_active: true,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'admin-keshav',
+    email: 'keshavsharma00007@gmail.com',
+    name: 'Keshav Sharma (Owner)',
+    role: 'super_admin',
+    is_active: true,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'admin-legacy',
+    email: 'admin@salonhub.com',
+    name: 'Salon Hub Admin',
+    role: 'super_admin',
     is_active: true,
     created_at: new Date().toISOString()
   }
@@ -199,7 +215,7 @@ export async function isEmailAuthorizedAdmin(email) {
 
   return {
     authorized: false,
-    reason: `The Google account "${email}" is not authorized to access the Salon HUB Admin Panel.`
+    reason: `The Google account "${email}" is not authorized to access the Barber Hub Admin Panel.`
   }
 }
 
@@ -336,53 +352,99 @@ export async function fetchBookingsFromSupabase() {
   }
 }
 
+// Fetch full bookings roster for verified admin
+export async function fetchAdminBookingsFromSupabase() {
+  if (!isSupabaseConfigured) return []
+  const adminEmail = getActiveAdminEmail()
+  if (adminEmail) {
+    try {
+      const { data, error } = await supabase.rpc('admin_fetch_bookings', {
+        p_admin_email: adminEmail
+      })
+      if (!error && data && data.length > 0) {
+        return data.map((b) => ({
+          id: b.id,
+          code: b.code,
+          guestName: b.client_name,
+          guestPhone: b.client_phone,
+          guestEmail: b.client_email,
+          serviceName: b.service_name,
+          servicePrice: b.service_price,
+          stylist: b.stylist,
+          date: b.appointment_date,
+          time: b.appointment_time,
+          isQuietChair: b.quiet_chair,
+          status: b.status ? (b.status.charAt(0).toUpperCase() + b.status.slice(1)) : 'Confirmed',
+          guestNotes: b.notes || '',
+          createdAt: (b.created_at || '').split('T')[0]
+        }))
+      }
+    } catch (err) {
+      console.warn('RPC admin_fetch_bookings notice:', err.message)
+    }
+  }
+
+  // Fallback: query public view
+  return fetchBookingsFromSupabase()
+}
+
 // Sync new appointment booking (with conflict prevention and PII protection)
 export async function syncBookingToSupabase(booking) {
   if (!isSupabaseConfigured) return null
   try {
-    // Check if another client already booked this date & time slot via PII-safe view
+    const bDate = booking.date || booking.appointment_date
+    const bTime = booking.time || booking.appointment_time
+
+    if (!bDate || !bTime) {
+      return { conflict: false, error: 'Appointment date and time are required.' }
+    }
+
+    // 1. Check if another client already booked this date & time slot via PII-safe view
     const { data: existing, error: checkErr } = await supabase
       .from('public_booked_slots')
       .select('id')
-      .eq('appointment_date', booking.date)
-      .eq('appointment_time', booking.time)
+      .eq('appointment_date', bDate)
+      .eq('appointment_time', bTime)
       .neq('status', 'cancelled')
       .neq('id', booking.id || '')
       .limit(1)
 
     if (!checkErr && existing && existing.length > 0) {
-      console.warn(`Time slot conflict: ${booking.date} at ${booking.time} is already booked.`)
+      console.warn(`Time slot conflict: ${bDate} at ${bTime} is already booked.`)
       return { conflict: true, error: 'This time slot has already been reserved for this date.' }
     }
 
     const payload = {
       id: booking.id || `book-${Date.now()}`,
-      code: booking.code || `ER-${Math.floor(100000 + Math.random() * 900000)}`,
-      client_name: booking.clientName || booking.guestName || 'Valued Guest',
-      client_phone: booking.clientPhone || booking.guestPhone || '',
-      client_email: booking.clientEmail || booking.guestEmail || '',
-      user_email: booking.userEmail || '',
-      service_name: booking.serviceName || 'Bespoke Styling',
-      service_price: booking.servicePrice || '',
-      stylist: booking.stylist || 'Solo Master Artist',
-      appointment_date: booking.date,
-      appointment_time: booking.time,
-      quiet_chair: Boolean(booking.quietChair || booking.isQuietChair),
-      status: (booking.status || 'pending').toLowerCase() === 'confirmed' ? 'confirmed' : 'pending',
-      created_at: booking.createdAt || new Date().toISOString()
+      code: booking.code || `HUB-${Math.floor(100000 + Math.random() * 900000)}`,
+      client_name: booking.clientName || booking.guestName || booking.client_name || 'Valued Guest',
+      client_phone: booking.clientPhone || booking.guestPhone || booking.client_phone || '',
+      client_email: booking.clientEmail || booking.guestEmail || booking.client_email || '',
+      user_email: booking.userEmail || booking.user_email || '',
+      service_name: booking.serviceName || booking.service_name || 'Bespoke Styling',
+      service_price: booking.servicePrice || booking.service_price || '',
+      stylist: booking.stylist || 'Fifth Avenue Master Stylist',
+      appointment_date: bDate,
+      appointment_time: bTime,
+      quiet_chair: Boolean(booking.quietChair ?? booking.quiet_chair ?? booking.isQuietChair),
+      status: (booking.status || 'confirmed').toLowerCase() === 'confirmed' ? 'confirmed' : 'pending',
+      notes: booking.notes || booking.guestNotes || '',
+      created_at: booking.createdAt || booking.created_at || new Date().toISOString()
     }
-    const { data, error } = await supabase
+
+    // Insert new booking (do NOT use .select() or .upsert() as anon lacks SELECT & UPDATE on bookings table)
+    const { error } = await supabase
       .from('bookings')
-      .upsert(payload, { onConflict: 'id' })
-      .select()
+      .insert(payload)
+
     if (error) {
       if (error.code === '23505') {
         return { conflict: true, error: 'This time slot has already been reserved for this date.' }
       }
       console.warn('Supabase booking sync notice:', error.message)
-      return null
+      return { ok: false, error: error.message }
     }
-    return data
+    return { ok: true, data: payload }
   } catch (err) {
     console.warn('Supabase booking sync error:', err)
     return null
@@ -450,22 +512,22 @@ export async function syncContactToSupabase(contact) {
   try {
     const payload = {
       id: contact.id || `contact-${Date.now()}`,
-      name: contact.name,
-      email: contact.email,
-      phone: contact.phone || '',
-      service: contact.service || '',
-      message: contact.message,
+      name: (contact.name || '').trim(),
+      email: (contact.email || '').trim(),
+      phone: (contact.phone || '').trim(),
+      service: (contact.service || '').trim(),
+      message: (contact.message || '').trim(),
       created_at: new Date().toISOString()
     }
-    const { data, error } = await supabase
+    // Insert contact message (no .select() to respect anon RLS)
+    const { error } = await supabase
       .from('contacts')
       .insert(payload)
-      .select()
     if (error) {
       console.warn('Supabase contact sync notice:', error.message)
-      return null
+      return { ok: false, error: error.message }
     }
-    return data
+    return { ok: true, data: payload }
   } catch (err) {
     console.warn('Supabase contact sync error:', err)
     return null
@@ -482,7 +544,7 @@ export async function syncReviewToSupabase(review) {
       role: review.role || 'Patron',
       stars: review.stars || '★★★★★',
       rating: Number(review.rating || 5),
-      service: review.service || 'Salon HUB Bespoke Experience',
+      service: review.service || 'Barber Hub Bespoke Experience',
       quote: review.quote || review.text || '',
       created_at: new Date().toISOString()
     }
@@ -676,7 +738,7 @@ export async function syncTimetableToSupabase(timetable) {
 // COMPLETE DATABASE SCHEMA SCRIPT
 // ============================================================
 export const SUPABASE_SCHEMA_SQL = `-- ==============================================================================
--- SALON HUB FIFTH AVENUE — HARDENED POSTGRES DATABASE SCHEMA & SECURITY CONTROLS
+-- BARBER HUB FIFTH AVENUE — HARDENED POSTGRES DATABASE SCHEMA & SECURITY CONTROLS
 -- Implements CIA Triad: Confidentiality, Integrity, Availability
 -- Run in Supabase SQL Editor: https://supabase.com/dashboard/project/abresbnxhfhtpwnanfcn/sql
 -- ==============================================================================
@@ -1176,8 +1238,8 @@ create policy "Admin manage timetable" on public.timetable for all to authentica
 -- ==============================================================================
 insert into public.authorized_admins (id, email, name, role, is_active)
 values
-  ('admin-master', 'admin@salonhub.com', 'Salon HUB Master Admin', 'super_admin', true),
-  ('admin-director', 'director@salonhub.com', 'Elena Vance', 'manager', true)
+  ('admin-master', 'admin@barberhub.com', 'Barber Hub Master Admin', 'super_admin', true),
+  ('admin-director', 'director@barberhub.com', 'Elena Vance', 'manager', true)
 on conflict (id) do nothing;
 
 insert into public.services (id, num, category, name, price, price_num, duration, tag, img, "desc")
@@ -1210,11 +1272,11 @@ on conflict (id) do nothing;
 
 insert into public.reviews (id, stars, rating, quote, author, service)
 values
-  ('rev-1', '★★★★★', 5, 'I have been a client of Salon HUB since they opened. They are the best. I won''t go anywhere else. My hair is curly and they do an amazing job. Always have', 'Carolyn Pianin', 'Cut & Styling'),
+  ('rev-1', '★★★★★', 5, 'I have been a client of Barber Hub since they opened. They are the best. I won''t go anywhere else. My hair is curly and they do an amazing job. Always have', 'Carolyn Pianin', 'Cut & Styling'),
   ('rev-2', '★★★★★', 5, 'I had my hair cut by Carmel and it was such a great experience 10/10 recommend. She asked all the right questions to really understand what I was looking for. My hair came out fabulous!!', 'Sofia Appel', 'Cut & Styling'),
-  ('rev-3', '★★★★★', 5, 'I hadn''t had my naturally very dark hair colored in a very long time, but I took the plunge with Kelly at Salon HUB and it was the best decision! Kelly gave me a thorough consultation and along with Devin they made sure my cut and color work in perfect harmony.', 'Vanessa Moreno', 'Color'),
+  ('rev-3', '★★★★★', 5, 'I hadn''t had my naturally very dark hair colored in a very long time, but I took the plunge with Kelly at Barber Hub and it was the best decision! Kelly gave me a thorough consultation and along with Devin they made sure my cut and color work in perfect harmony.', 'Vanessa Moreno', 'Color'),
   ('rev-4', '★★★★★', 5, 'I never write google reviews but the blowout that Rene just gave me deserves a review. It was a simple walk in and I’m leaving with the best blow out I have ever gotten.', 'Daniela Silva', 'Blow Dry'),
-  ('rev-5', '★★★★★', 5, 'Salon HUB is such a wonderful experience! The salon is beautiful, exquisitely clean, and packed with highly talented artists! Clint does my cut..a perfectionist! Kelly does my color…very natural!', 'Donna Mazur', 'Cut & Color'),
+  ('rev-5', '★★★★★', 5, 'Barber Hub is such a wonderful experience! The salon is beautiful, exquisitely clean, and packed with highly talented artists! Clint does my cut..a perfectionist! Kelly does my color…very natural!', 'Donna Mazur', 'Cut & Color'),
   ('rev-6', '★★★★★', 5, 'I can’t say enough good things about this salon! Mark is a true artist with color — my color has never looked better. And Clint gives the best cuts; he really knows how to shape and style for your face and hair type.', 'M Bailey', 'Color & Cut')
 on conflict (id) do nothing;
 

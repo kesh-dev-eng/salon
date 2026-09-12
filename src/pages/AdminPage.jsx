@@ -24,7 +24,8 @@ import {
   removeAuthorizedAdmin,
   toggleAuthorizedAdminStatus,
   isTimeSlotBooked,
-  normalizeTimeStr
+  normalizeTimeStr,
+  fetchAdminBookingsFromSupabase
 } from '../supabase'
 
 export default function AdminPage({
@@ -86,6 +87,18 @@ export default function AdminPage({
         sessionStorage.setItem('sck_admin_unlocked', 'true')
         sessionStorage.setItem('sck_authorized_admin_info', JSON.stringify(res.admin))
         loadAdminsList()
+        fetchAdminBookingsFromSupabase().then((cloudBookings) => {
+          if (cloudBookings && cloudBookings.length > 0 && setBookings) {
+            setBookings((prev) => {
+              const map = new Map()
+              cloudBookings.forEach((b) => map.set(b.id || b.code, b))
+              prev.forEach((b) => {
+                if (!map.has(b.id || b.code)) map.set(b.id || b.code, b)
+              })
+              return Array.from(map.values())
+            })
+          }
+        })
       } else {
         setIsAuthenticated(false)
         setAuthorizedAdminInfo(null)
@@ -269,6 +282,24 @@ export default function AdminPage({
       showToast('✓ Supabase SQL schema copied! Paste in Supabase SQL Editor.')
     } catch {
       showToast('Copy failed. View src/supabase.js for SQL.')
+    }
+  }
+
+  const handleSyncCloudBookings = async () => {
+    showToast('Checking Supabase Cloud for bookings...')
+    const cloud = await fetchAdminBookingsFromSupabase()
+    if (cloud && cloud.length > 0 && setBookings) {
+      setBookings((prev) => {
+        const map = new Map()
+        cloud.forEach((b) => map.set(b.id || b.code, b))
+        prev.forEach((b) => {
+          if (!map.has(b.id || b.code)) map.set(b.id || b.code, b)
+        })
+        return Array.from(map.values())
+      })
+      showToast(`✓ Synced ${cloud.length} reservation(s) from Supabase Cloud`)
+    } else {
+      showToast('Database checked. All reservations up to date.')
     }
   }
 
@@ -699,7 +730,7 @@ export default function AdminPage({
       role: newReviewRole.trim(),
       text: newReviewText.trim(),
       rating: Number(newReviewRating),
-      service: 'Salon HUB Bespoke Experience'
+      service: 'Barber Hub Bespoke Experience'
     }
 
     setReviews((prev) => [newRev, ...prev])
@@ -744,12 +775,15 @@ export default function AdminPage({
     return (
       <div className="sck-admin-lock-screen">
         <div className="sck-admin-lock-card">
+          <div className="sck-admin-lock-logo-wrap" style={{ marginBottom: 16 }}>
+            <img src="/logo.png" alt="Barber Hub" className="sck-admin-lock-logo" />
+          </div>
           <div className="sck-auth-loading-spinner" />
           <h2 className="sck-admin-lock-title" style={{ marginTop: 22 }}>
             Verifying Authorization
           </h2>
           <p className="sck-admin-lock-subtitle">
-            Validating Google account administrative credentials with Salon HUB security protocols...
+            Validating Google account administrative credentials with Barber Hub security protocols...
           </p>
         </div>
       </div>
@@ -773,7 +807,7 @@ export default function AdminPage({
           <span className="sck-denied-tag">ACCESS RESTRICTED</span>
           <h1 className="sck-admin-lock-title">Unauthorized Account</h1>
           <p className="sck-admin-lock-subtitle">
-            Only authorized Google accounts can view or manage the Salon HUB Admin Panel.
+            Only authorized Google accounts can view or manage the Barber Hub Admin Panel.
           </p>
 
           <div className="sck-denied-user-box">
@@ -825,16 +859,13 @@ export default function AdminPage({
     return (
       <div className="sck-admin-lock-screen">
         <div className="sck-admin-lock-card">
-          <div className="sck-admin-lock-icon">
-            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
+          <div className="sck-admin-lock-logo-wrap">
+            <img src="/logo.png" alt="Barber Hub" className="sck-admin-lock-logo" />
           </div>
           <span className="sck-gold-tag">ATELIER PRIVÉ</span>
-          <h1 className="sck-admin-lock-title">Salon HUB Management</h1>
+          <h1 className="sck-admin-lock-title">Barber Hub Management</h1>
           <p className="sck-admin-lock-subtitle">
-            Sign in with an authorized Google administrator account to access the salon management console.
+            Sign in with an authorized Google administrator account to access the Barber Hub management console.
           </p>
 
           <div className="sck-auth-status-chip">
@@ -897,8 +928,9 @@ export default function AdminPage({
       <header className="sck-admin-topbar">
         <div className="sck-admin-topbar-left">
           <div className="sck-admin-logo">
+            <img src="/logo.png" alt="Barber Hub" className="sck-admin-topbar-logo" />
             <span className="sck-admin-logo-badge">ADMIN</span>
-            <span className="sck-admin-brand">Salon HUB Fifth Avenue</span>
+            <span className="sck-admin-brand">Barber Hub Fifth Avenue</span>
           </div>
           <div className="sck-admin-env-pill" title={`Connected to Supabase Project: ${SUPABASE_URL}`}>
             <span className="sck-pulse-dot" /> Supabase Cloud Active
@@ -1074,7 +1106,7 @@ export default function AdminPage({
 
           <div className="sck-sidebar-footer">
             <div className="sck-sidebar-footer-card">
-              <span className="sck-footer-title">Salon HUB New York</span>
+              <span className="sck-footer-title">Barber Hub New York</span>
               <p>587 5th Ave, Fourth Floor</p>
               <span className="sck-footer-pin-note">Secured by Google OAuth &amp; Supabase</span>
             </div>
@@ -1091,7 +1123,7 @@ export default function AdminPage({
               <div className="sck-pane-header">
                 <div>
                   <h2 className="sck-pane-title">Executive Dashboard</h2>
-                  <p className="sck-pane-subtitle">Live activity, booking volume, and catalog status for Salon HUB.</p>
+                  <p className="sck-pane-subtitle">Live activity, booking volume, and catalog status for Barber Hub.</p>
                 </div>
                 <button
                   type="button"
@@ -1247,13 +1279,23 @@ export default function AdminPage({
                   <h2 className="sck-pane-title">Appointments &amp; Reservations</h2>
                   <p className="sck-pane-subtitle">Manage guest schedules, approve sessions, and record walk-ins.</p>
                 </div>
-                <button
-                  type="button"
-                  className="sck-btn-teal"
-                  onClick={() => setIsAddBookingModalOpen(true)}
-                >
-                  + Add Walk-In Reservation
-                </button>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="sck-btn-ghost"
+                    onClick={handleSyncCloudBookings}
+                    title="Fetch latest online bookings from Supabase Cloud"
+                  >
+                    ↻ Sync Cloud
+                  </button>
+                  <button
+                    type="button"
+                    className="sck-btn-teal"
+                    onClick={() => setIsAddBookingModalOpen(true)}
+                  >
+                    + Add Walk-In Reservation
+                  </button>
+                </div>
               </div>
 
               {/* Status & Search Filter Bar */}
@@ -1827,7 +1869,7 @@ export default function AdminPage({
                 <div>
                   <h2 className="sck-pane-title">Authorized Google Accounts</h2>
                   <p className="sck-pane-subtitle">
-                    Only verified Google accounts listed below have permission to unlock and view the Salon HUB Admin Console.
+                    Only verified Google accounts listed below have permission to unlock and view the Barber Hub Admin Console.
                   </p>
                 </div>
                 <button

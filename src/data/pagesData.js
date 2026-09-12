@@ -1,4 +1,4 @@
-/* ─── Salon HUB Pages Data ─── */
+/* ─── Barber Hub Pages Data ─── */
 
 export const TEAM_DATA = {
   founders: [
@@ -128,11 +128,11 @@ export const BLOG_POSTS = [
     publication: 'Glamour',
     date: 'May 27, 2026',
     category: 'Haircare & Tools',
-    excerpt: 'Salon HUB master stylist Devin Toth breaks down which brush bristles prevent mechanical breakage and how wet vs. dry detangling changes your hair health.',
+    excerpt: 'Barber Hub master stylist Devin Toth breaks down which brush bristles prevent mechanical breakage and how wet vs. dry detangling changes your hair health.',
     readTime: '4 min read',
     content: `When it comes to detangling without tearing delicate hair fibers, brush geometry matters just as much as your leave-in conditioner. "Brushing shouldn't sound like ripping fabric," explains Devin Toth. "If you hear snapping, your brush bristles are too rigid or your technique starts too high on the shaft."
 
-At Salon HUB, we recommend starting at the ends with a flexible nylon-pin brush, slowly working upwards in sections. Pair with a restorative leave-in spray formulated with botanical oils to smooth down open cuticle scales.`
+At Barber Hub, we recommend starting at the ends with a flexible nylon-pin brush, slowly working upwards in sections. Pair with a restorative leave-in spray formulated with botanical oils to smooth down open cuticle scales.`
   },
   {
     id: 'allure-bond-builders',
@@ -168,7 +168,7 @@ Key tips for maintaining a pixie: schedule trims every 4 to 6 weeks, invest in a
     readTime: '5 min read',
     content: `The sleek bridal chignon has cemented itself as modern bridal royalty. The secret to avoiding a helmet-like appearance? Layering lightweight styling creams with medium-hold shine sprays rather than heavy alcohol-based hairsprays.
 
-"You want a mirror-like finish that moves with you when you turn your head to hug your guests," explains Devin. At Salon HUB, our bridal trials test veil attachment anchor points to ensure zero tugging.`
+"You want a mirror-like finish that moves with you when you turn your head to hug your guests," explains Devin. At Barber Hub, our bridal trials test veil attachment anchor points to ensure zero tugging.`
   },
   {
     id: 'allure-lowlights-blonde',
@@ -255,11 +255,11 @@ export const SALON_POLICIES = [
 ]
 
 export const SALON_INFO = {
-  name: 'Salon HUB',
-  tagline: 'Luxury Hair Salon located on Fifth Avenue',
+  name: 'Barber Hub',
+  tagline: 'Luxury Grooming & Hair Salon located on Fifth Avenue',
   address: '587 5th Avenue #Fourth Floor, New York, NY 10017',
   phone: '(212) 265-1700',
-  email: 'info@salonhub.com',
+  email: 'info@barberhub.com',
   hours: [
     { day: 'Monday', time: 'Closed' },
     { day: 'Tuesday', time: '10:00 AM – 7:00 PM' },

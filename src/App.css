@@ -81,8 +81,8 @@ body {
   background-size: cover;
   background-position: center 25%;
   background-repeat: no-repeat;
-  opacity: 0.38;
-  filter: contrast(1.15) brightness(0.7) saturate(1.1);
+  opacity: 0.42;
+  filter: contrast(1.15) brightness(0.82) saturate(1.1);
   animation: hairCinematicFloat 24s ease-in-out infinite alternate;
   will-change: transform, filter;
 }
@@ -90,15 +90,15 @@ body {
 @keyframes hairCinematicFloat {
   0% {
     transform: scale(1.0) translateY(0);
-    filter: contrast(1.15) brightness(0.68) saturate(1.05);
+    filter: contrast(1.15) brightness(0.8) saturate(1.05);
   }
   50% {
     transform: scale(1.08) translateY(-1.5%);
-    filter: contrast(1.22) brightness(0.75) saturate(1.2);
+    filter: contrast(1.22) brightness(0.86) saturate(1.2);
   }
   100% {
     transform: scale(1.04) translateY(1%);
-    filter: contrast(1.18) brightness(0.7) saturate(1.1);
+    filter: contrast(1.18) brightness(0.82) saturate(1.1);
   }
 }
 
@@ -127,7 +127,7 @@ body {
   inset: 0;
   z-index: 3;
   pointer-events: none;
-  background: radial-gradient(ellipse 85% 85% at 50% 45%, transparent 20%, rgba(10, 8, 9, 0.88) 95%);
+  background: radial-gradient(ellipse 90% 90% at 50% 45%, transparent 32%, rgba(10, 8, 9, 0.7) 95%);
 }
 
 main {
@@ -265,42 +265,129 @@ section {
 
 /* Logo Box */
 .sck-logo-box {
-  width: 88px;
-  height: 88px;
-  background: #0d0d0d;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 92px;
+  height: 92px;
+  background: #000000;
+  border: 1px solid rgba(255, 144, 0, 0.28);
+  border-radius: 10px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 6px;
   text-decoration: none;
   flex-shrink: 0;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .sck-logo-box:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
+  border-color: #ff9000;
+  box-shadow: 0 0 20px rgba(255, 144, 0, 0.35);
+  transform: translateY(-2px);
 }
 
-.sck-logo-italic {
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 19px;
-  color: #ffffff;
-  line-height: 1;
-  margin-bottom: 3px;
-  letter-spacing: 0.04em;
+.sck-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
-.sck-logo-bold {
-  font-family: var(--sans);
-  font-size: 28px;
+/* Brand Logo Placements Across Site */
+.footer-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.footer-brand-logo-img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 144, 0, 0.45);
+  background: #14110f;
+  padding: 5px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+}
+
+.mobile-drawer-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 16px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mobile-drawer-logo-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 144, 0, 0.3);
+  background: #000000;
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+.mobile-drawer-brand-title {
+  font-family: var(--serif, 'Fraunces', serif);
+  font-size: 20px;
   font-weight: 700;
   color: #ffffff;
-  line-height: 1;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
 }
+
+.sck-admin-topbar-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 144, 0, 0.35);
+  background: #000000;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.sck-admin-lock-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.sck-admin-lock-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 144, 0, 0.4);
+  background: #000000;
+  padding: 6px;
+  box-shadow: 0 0 24px rgba(255, 144, 0, 0.28);
+}
+
+.sck-booking-header-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.sck-booking-header-logo {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 144, 0, 0.35);
+  background: #000000;
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+
 
 /* Center Links */
 .sck-nav-links {
@@ -719,6 +806,27 @@ section {
 }
 
 @media (max-width: 959px) {
+  .sck-header {
+    height: 72px;
+  }
+  .sck-nav {
+    height: 72px;
+    padding: 0 4vw;
+  }
+  .sck-logo-box {
+    width: 52px;
+    height: 52px;
+  }
+  .sck-logo-italic {
+    font-size: 13px;
+    margin-bottom: 1px;
+  }
+  .sck-logo-bold {
+    font-size: 19px;
+  }
+  .sck-actions {
+    gap: 12px;
+  }
   .nav {
     padding: 14px 4vw;
   }
@@ -728,6 +836,35 @@ section {
 }
 
 @media (max-width: 768px) {
+  .sck-header {
+    height: 68px;
+  }
+  .sck-nav {
+    height: 68px;
+    padding: 0 16px;
+  }
+  .sck-logo-box {
+    width: 48px;
+    height: 48px;
+  }
+  .sck-logo-italic {
+    font-size: 11.5px;
+    margin-bottom: 1px;
+  }
+  .sck-logo-bold {
+    font-size: 17px;
+  }
+  .sck-actions {
+    gap: 10px;
+  }
+  .sck-btn-teal.sck-book-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
   .nav {
     padding: 13px 18px;
   }
@@ -745,6 +882,31 @@ section {
 }
 
 @media (max-width: 480px) {
+  .sck-header {
+    height: 64px;
+  }
+  .sck-nav {
+    height: 64px;
+    padding: 0 12px;
+  }
+  .sck-logo-box {
+    width: 42px;
+    height: 42px;
+  }
+  .sck-logo-italic {
+    font-size: 10.5px;
+  }
+  .sck-logo-bold {
+    font-size: 14.5px;
+  }
+  .sck-actions {
+    gap: 8px;
+  }
+  .sck-btn-teal.sck-book-btn {
+    padding: 7px 11px;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+  }
   .nav {
     padding: 12px 14px;
   }
@@ -767,8 +929,9 @@ section {
     gap: 4px;
   }
   .nav__hamburger {
-    width: 26px;
-    height: 20px;
+    width: 36px;
+    height: 36px;
+    padding: 6px 4px;
   }
   .hero-cta-group {
     flex-direction: column;
@@ -783,6 +946,27 @@ section {
 }
 
 @media (max-width: 360px) {
+  .sck-header {
+    height: 60px;
+  }
+  .sck-nav {
+    height: 60px;
+    padding: 0 10px;
+  }
+  .sck-logo-box {
+    width: 38px;
+    height: 38px;
+  }
+  .sck-logo-italic {
+    font-size: 9.5px;
+  }
+  .sck-logo-bold {
+    font-size: 13.5px;
+  }
+  .sck-btn-teal.sck-book-btn {
+    padding: 6px 9px;
+    font-size: 10.5px;
+  }
   .nav {
     padding: 10px 12px;
   }
@@ -838,16 +1022,19 @@ section {
   inset: 0;
   background: rgba(10, 8, 9, 0.98);
   backdrop-filter: blur(28px);
-  z-index: 110;
+  -webkit-backdrop-filter: blur(28px);
+  z-index: 1200;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  gap: 26px;
+  gap: 20px;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.35s ease;
-  padding: 24px;
+  padding: 84px 24px 44px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mobile-drawer.is-open {
@@ -856,25 +1043,36 @@ section {
 }
 
 .mobile-drawer .modal-close-btn {
-  top: 24px;
-  right: 24px;
-  z-index: 130;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1210;
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .mobile-drawer-links {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
+  width: 100%;
 }
 
 .mobile-drawer a {
   font-family: var(--serif);
-  font-size: 26px;
+  font-size: clamp(20px, 4.5vw, 24px);
   color: var(--ivory);
   text-decoration: none;
   letter-spacing: 0.02em;
   transition: var(--transition);
+  padding: 8px 16px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .mobile-drawer a:hover {
@@ -889,6 +1087,7 @@ section {
   width: 100%;
   max-width: 280px;
   margin-top: 12px;
+  padding-bottom: 20px;
 }
 
 /* ---------- SALON SCK HERO SECTION ---------- */
@@ -2240,9 +2439,12 @@ section {
 
 /* ---------- LUXURY EDITORIAL FOOTER ---------- */
 .footer {
-  padding: 70px 5vw 36px;
-  border-top: 1px solid var(--line);
-  background: rgba(10, 8, 9, 0.98);
+  position: relative;
+  z-index: 10;
+  padding: 72px 5vw 38px;
+  border-top: 1px solid rgba(255, 144, 0, 0.35);
+  background: linear-gradient(180deg, #1c1815 0%, #13100e 100%);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.65);
 }
 
 .footer-content-grid {
@@ -2267,25 +2469,27 @@ section {
 
 .footer-brand-title {
   font-family: var(--script);
-  font-size: 34px;
-  color: var(--ivory);
+  font-size: 38px;
+  color: #ffffff;
   margin-bottom: 4px;
   letter-spacing: 0.02em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
 }
 
 .footer-brand-sub {
-  font-size: 11px;
+  font-size: 11.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: #ffaa33;
+  font-weight: 600;
   margin-bottom: 14px;
 }
 
 .footer-brand-desc {
-  font-size: 13px;
-  color: var(--ivory-muted);
-  line-height: 1.7;
-  max-width: 380px;
+  font-size: 14px;
+  color: #d8d2c9;
+  line-height: 1.75;
+  max-width: 400px;
 }
 
 .footer-col-links {
@@ -2295,30 +2499,31 @@ section {
 }
 
 .footer-col-title {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--gold-light);
-  margin-bottom: 16px;
+  color: #ffb84d;
+  margin-bottom: 18px;
 }
 
 .footer-col-links a {
-  color: var(--ivory-dim);
+  color: #ece6dd;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.6;
   transition: var(--transition);
 }
 
 .footer-col-links a:hover {
-  color: var(--gold);
-  transform: translateX(2px);
+  color: #ffaa33;
+  transform: translateX(4px);
 }
 
 .footer-admin-link {
   background: transparent;
   border: none;
-  color: var(--gold);
+  color: #ffaa33;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -2330,28 +2535,34 @@ section {
 }
 
 .footer-admin-link:hover {
-  color: var(--gold-light);
+  color: #ffc266;
   text-decoration: underline;
 }
 
 .footer-col-info {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--ivory-muted);
+  gap: 10px;
+  font-size: 14px;
+  color: #d8d2c9;
+  line-height: 1.7;
+}
+
+.footer-col-info p {
+  color: #d8d2c9;
 }
 
 .footer-email-link {
-  color: var(--gold);
+  color: #ffaa33;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 600;
   margin-top: 6px;
   transition: var(--transition);
 }
 
 .footer-email-link:hover {
-  color: var(--gold-light);
+  color: #ffd285;
   text-decoration: underline;
 }
 
@@ -2363,17 +2574,18 @@ section {
   gap: 16px;
   max-width: 1200px;
   margin: 0 auto;
-  padding-top: 24px;
-  border-top: 1px solid var(--line-soft);
-  font-size: 12px;
-  color: var(--ivory-muted);
+  padding-top: 26px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  color: #b0a89d;
 }
 
 .footer-disclaimer {
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: 11.5px;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: #ffaa33;
+  font-weight: 600;
 }
 
 /* ---------- GSAP REVEAL COMPATIBILITY (DEFAULT VISIBLE) ---------- */
@@ -6548,40 +6760,46 @@ section {
 }
 
 .sck-about-hero-card {
-  background: #f4f1ea;
-  color: #1a1816;
+  background: rgba(10, 8, 7, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 144, 0, 0.35);
+  color: #ffffff;
   padding: 44px 38px;
-  max-width: 470px;
-  border-radius: 2px;
+  max-width: 480px;
+  border-radius: 8px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
   flex-shrink: 0;
 }
 
 .sck-about-hero-card-eyebrow {
   display: block;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-family: var(--sans);
-  color: #5d5750;
-  letter-spacing: 0.04em;
+  color: #ffaa33;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   margin-bottom: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .sck-about-hero-card-title {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 28px;
+  font-size: clamp(26px, 3vw, 32px);
   line-height: 1.25;
-  color: #151412;
+  color: #ffffff;
   font-weight: 400;
   margin: 0 0 16px 0;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85);
 }
 
 .sck-about-hero-card-body {
   font-family: var(--sans);
-  font-size: 13.5px;
-  line-height: 1.68;
-  color: #38342e;
+  font-size: 14px;
+  line-height: 1.72;
+  color: #e6e1d8;
   margin: 0 0 24px 0;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
 }
 
 .sck-about-hero-card-btn {
@@ -6589,20 +6807,22 @@ section {
   background: #ff9000;
   color: #000000;
   border: none;
-  padding: 12px 28px;
+  padding: 13px 32px;
   font-family: var(--sans);
   font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   cursor: pointer;
-  border-radius: 2px;
+  border-radius: 4px;
   transition: all 0.25s ease;
+  box-shadow: 0 4px 18px rgba(255, 144, 0, 0.4);
 }
 
 .sck-about-hero-card-btn:hover {
-  background: #e07f00;
+  background: #ffaa33;
+  color: #000000;
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(255, 144, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(255, 144, 0, 0.55);
 }
 
 /* Responsive */
@@ -7377,6 +7597,20 @@ section {
   font-weight: 600;
   font-size: 10.5px;
   letter-spacing: 0.02em;
+}
+
+.sck-time-badge.is-passed-badge {
+  background: rgba(255, 144, 0, 0.14);
+  color: #ffaa33;
+  border-color: rgba(255, 144, 0, 0.38);
+}
+
+.sck-time-slot-card.is-passed .sck-time-val {
+  text-decoration-color: rgba(255, 144, 0, 0.6);
+}
+
+.sck-time-slot-card.is-passed .sck-time-finish.is-booked-sub {
+  color: #ffaa33;
 }
 
 /* Conflict Alert Banner */
@@ -9789,6 +10023,1452 @@ section {
   }
 }
 
+/* ============================================================
+   SALON HUB — MASTER MOBILE RESPONSIVENESS & TOUCH LEGIBILITY
+   ============================================================ */
 
+/* 1. Global Touch Targets & Viewport Protections */
+html, body {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  -webkit-text-size-adjust: 100%;
+}
 
+/* Prevent iOS Safari 16px auto-zoom on form controls */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="password"],
+  input[type="date"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
 
+/* 2. Header & Sticky Nav Coordination */
+@media (max-width: 959px) {
+  .sck-header {
+    height: 72px !important;
+  }
+  .sck-nav {
+    height: 72px !important;
+  }
+  .sck-catalog-controls {
+    top: 72px !important;
+    scroll-margin-top: 75px !important;
+  }
+  .sck-photo-hero {
+    margin-top: -72px !important;
+    padding-top: 110px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .sck-header {
+    height: 68px !important;
+  }
+  .sck-nav {
+    height: 68px !important;
+  }
+  .sck-catalog-controls {
+    top: 68px !important;
+    padding: 12px 16px !important;
+    scroll-margin-top: 70px !important;
+  }
+  .sck-photo-hero {
+    margin-top: -68px !important;
+    padding-top: 96px !important;
+    min-height: 380px !important;
+    padding-bottom: 40px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .sck-header {
+    height: 64px !important;
+  }
+  .sck-nav {
+    height: 64px !important;
+  }
+  .sck-catalog-controls {
+    top: 64px !important;
+    padding: 10px 14px !important;
+    scroll-margin-top: 66px !important;
+  }
+  .sck-photo-hero {
+    margin-top: -64px !important;
+    padding-top: 86px !important;
+    min-height: 340px !important;
+    padding-bottom: 30px !important;
+  }
+}
+
+/* 3. Touch-friendly Service Cards (No Desktop Hover Flips on Mobile) */
+@media (max-width: 768px), (hover: none) {
+  .card,
+  .sck-service-card {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    transform: none !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+  }
+
+  .card:active,
+  .sck-service-card:active {
+    border-color: #ff9000 !important;
+    transform: scale(0.99) !important;
+  }
+
+  /* Force first content visible and well laid out */
+  .first-content {
+    height: auto !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 12px !important;
+    overflow: visible !important;
+  }
+
+  .card:hover .first-content,
+  .sck-service-card:hover .first-content {
+    height: auto !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide the 3D rotating desktop back face on touch */
+  .second-content,
+  .card:hover .second-content,
+  .sck-service-card:hover .second-content {
+    display: none !important;
+  }
+
+  .sck-service-img-wrapper,
+  .sck-service-img-wrap {
+    height: 190px !important;
+    width: 100% !important;
+  }
+
+  .sck-service-img {
+    height: 100% !important;
+    width: 100% !important;
+    object-fit: cover !important;
+  }
+
+  .sck-service-card-body,
+  .sck-service-body {
+    padding: 18px 16px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .sck-service-card-name,
+  .sck-service-name {
+    font-size: 19px !important;
+    line-height: 1.3 !important;
+  }
+
+  .sck-service-card-price,
+  .sck-service-price {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #ff9000 !important;
+  }
+
+  .sck-service-card-desc,
+  .sck-service-desc {
+    font-size: 13.5px !important;
+    line-height: 1.6 !important;
+    color: rgba(255, 255, 255, 0.72) !important;
+    margin: 0 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  .sck-service-card-footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-top: 6px !important;
+    padding-top: 12px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .sck-service-card-book-btn,
+  .sck-service-book-btn {
+    background: #ff9000 !important;
+    color: #070606 !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    padding: 10px 18px !important;
+    border-radius: 6px !important;
+    border: none !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    min-height: 42px !important;
+    letter-spacing: 0.03em !important;
+    box-shadow: 0 4px 14px rgba(255, 144, 0, 0.35) !important;
+    text-decoration: none !important;
+  }
+}
+
+/* 4. Sleek Horizontal Touch Carousel for Filter Pills */
+@media (max-width: 768px) {
+  .sck-catalog-controls-inner {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .sck-cat-pills {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    padding-bottom: 4px !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .sck-cat-pills::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .sck-cat-pill {
+    flex-shrink: 0 !important;
+    padding: 7px 15px !important;
+    font-size: 12.5px !important;
+    white-space: nowrap !important;
+  }
+
+  .sck-search-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .sck-search-input {
+    width: 100% !important;
+    font-size: 14px !important;
+    padding: 9px 14px !important;
+  }
+}
+
+/* 5. Booking Page Mobile & Small Resolutions Overhaul */
+@media (max-width: 860px) {
+  .sck-calendar-time-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    gap: 20px !important;
+  }
+
+  .sck-calendar-card,
+  .sck-time-sets-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    padding: 16px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .sck-cal-presets {
+    display: flex !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding-bottom: 6px !important;
+  }
+
+  .sck-cal-presets::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .sck-cal-preset-btn {
+    padding: 5px 10px !important;
+    font-size: 10.5px !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .sck-cal-weekdays {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    margin-bottom: 6px !important;
+  }
+
+  .sck-cal-weekday {
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: clamp(9.5px, 2.8vw, 11px) !important;
+    text-align: center !important;
+    padding: 2px 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .sck-cal-days-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .sck-cal-day {
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    aspect-ratio: 1 !important;
+    font-size: clamp(11px, 3.2vw, 13px) !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+  }
+
+  .sck-cal-today-dot {
+    width: 4px !important;
+    height: 4px !important;
+    bottom: 3px !important;
+  }
+
+  .sck-cal-closed-indicator {
+    font-size: 7px !important;
+    top: 2px !important;
+    right: 2px !important;
+  }
+
+  .sck-cal-footer-legend {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px 12px !important;
+    justify-content: center !important;
+    font-size: 11px !important;
+    margin-top: 12px !important;
+    padding-top: 10px !important;
+  }
+
+  .legend-item {
+    font-size: 10.5px !important;
+    gap: 4px !important;
+  }
+
+  /* Fix the 310px minmax blowout */
+  .sck-booking-page .booking-service-options {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .sck-booking-page .service-radio-box {
+    padding: 14px 14px !important;
+    gap: 12px !important;
+  }
+
+  .radio-service-name {
+    font-size: 14.5px !important;
+  }
+
+  .radio-service-desc {
+    font-size: 12px !important;
+  }
+
+  .radio-service-price {
+    font-size: 14.5px !important;
+  }
+
+  /* Time Filter Tabs */
+  .sck-time-filter-tabs {
+    gap: 6px !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .sck-time-filter-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .sck-time-tab {
+    flex-shrink: 0 !important;
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+
+  .sck-time-slot-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* Custom Time Picker */
+  .sck-custom-picker-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .sck-picker-colon {
+    display: none !important;
+  }
+
+  .sck-picker-col {
+    width: 100% !important;
+  }
+
+  .sck-custom-select {
+    width: 100% !important;
+  }
+
+  .sck-ampm-toggle {
+    width: 100% !important;
+  }
+
+  .ampm-btn {
+    flex: 1 !important;
+    text-align: center !important;
+  }
+
+  .sck-apply-custom-btn {
+    width: 100% !important;
+    margin-top: 6px !important;
+  }
+
+  /* Guest Info Form */
+  .guest-info-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .form-input {
+    font-size: 16px !important;
+  }
+
+  /* Summary Box */
+  .booking-summary-box {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding: 16px 14px !important;
+  }
+
+  .booking-summary-total {
+    font-size: 20px !important;
+  }
+
+  .sck-submit-booking-btn {
+    padding: 14px !important;
+    font-size: 14px !important;
+  }
+
+  /* Confirmation Card */
+  .sck-booking-confirmation-full {
+    padding: 32px 16px !important;
+  }
+
+  .confirmation-title {
+    font-size: 22px !important;
+  }
+
+  .confirmation-code-bar {
+    flex-direction: column !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  .confirmation-details-box {
+    padding: 16px 12px !important;
+  }
+
+  .conf-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 3px !important;
+  }
+
+  .confirmation-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  .confirmation-actions .btn {
+    width: 100% !important;
+  }
+}
+
+/* Extra Tight Viewports: 320px - 480px */
+@media (max-width: 480px) {
+  .sck-booking-page-section {
+    padding: 14px 6px 60px !important;
+  }
+
+  .sck-booking-card-wrapper {
+    padding: 14px 8px !important;
+    border-radius: 10px !important;
+  }
+
+  .sck-booking-card-title {
+    font-size: 20px !important;
+    line-height: 1.25 !important;
+  }
+
+  .sck-booking-badge {
+    font-size: 9.5px !important;
+    padding: 3px 10px !important;
+  }
+
+  .sck-step-num {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 10px !important;
+  }
+
+  .sck-booking-page .service-radio-box {
+    padding: 11px 10px !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .radio-service-meta {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding-top: 6px !important;
+    width: 100% !important;
+  }
+
+  .sck-calendar-card,
+  .sck-time-sets-card {
+    padding: 10px 5px !important;
+    border-radius: 9px !important;
+  }
+
+  .sck-cal-header {
+    margin-bottom: 8px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .sck-cal-month-name {
+    font-size: 16px !important;
+  }
+
+  .sck-cal-selected-sub {
+    font-size: 10.5px !important;
+  }
+
+  .sck-cal-nav-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 16px !important;
+  }
+
+  .sck-cal-presets {
+    gap: 4px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .sck-cal-preset-btn {
+    padding: 4px 8px !important;
+    font-size: 9.5px !important;
+  }
+
+  .sck-cal-days-grid,
+  .sck-cal-weekdays {
+    gap: 2.5px !important;
+  }
+
+  .sck-cal-weekday {
+    font-size: 9px !important;
+    padding: 1px 0 !important;
+  }
+
+  .sck-cal-day {
+    font-size: 11px !important;
+    border-radius: 4px !important;
+  }
+
+  .sck-time-title {
+    font-size: 16px !important;
+  }
+
+  .sck-time-sub {
+    font-size: 11px !important;
+  }
+
+  .sck-time-tab {
+    padding: 5px 8px !important;
+    font-size: 10.5px !important;
+  }
+}
+
+/* 6. Photo Heros Typography Legibility */
+@media (max-width: 600px) {
+  .sck-photo-hero-title br,
+  .sck-hero-title br,
+  .sck-about-hero-tagline br {
+    display: inline !important;
+    content: ' ' !important;
+  }
+
+  .sck-photo-hero-title {
+    font-size: clamp(25px, 6.5vw, 32px) !important;
+    line-height: 1.22 !important;
+    margin-bottom: 14px !important;
+  }
+
+  .sck-photo-hero-desc {
+    font-size: 13.5px !important;
+    line-height: 1.6 !important;
+    margin-bottom: 20px !important;
+  }
+
+  .sck-photo-hero-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 12px 20px !important;
+    font-size: 12.5px !important;
+  }
+
+  .sck-hero {
+    min-height: 80vh !important;
+    padding: 100px 20px 60px !important;
+  }
+
+  .sck-hero-title {
+    font-size: clamp(38px, 10vw, 56px) !important;
+  }
+
+  .sck-hero-subtitle {
+    font-size: 16px !important;
+  }
+
+  .sck-hero-btn {
+    width: 100% !important;
+    max-width: 280px !important;
+    padding: 14px 24px !important;
+    font-size: 13.5px !important;
+  }
+}
+
+/* 7. Testimonials / Reviews Carousel on Mobile */
+@media (max-width: 600px) {
+  .sck-notes-section {
+    padding: 60px 16px !important;
+  }
+
+  .sck-notes-title {
+    font-size: 26px !important;
+    margin-bottom: 30px !important;
+    text-align: center !important;
+  }
+
+  .sck-notes-carousel-container {
+    flex-direction: column !important;
+    padding: 0 !important;
+    gap: 20px !important;
+  }
+
+  .sck-notes-quote-box {
+    max-width: 100% !important;
+    padding: 0 4px !important;
+    min-height: auto !important;
+    text-align: center !important;
+  }
+
+  .sck-notes-quote-text {
+    font-size: 15px !important;
+    line-height: 1.68 !important;
+    margin-bottom: 14px !important;
+  }
+
+  .sck-notes-author {
+    font-size: 13.5px !important;
+  }
+
+  .sck-notes-carousel-container .sck-notes-nav-btn {
+    display: inline-flex !important;
+  }
+
+  .sck-notes-nav-btn {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 18px !important;
+  }
+
+  .sck-notes-action-wrap {
+    margin-top: 30px !important;
+  }
+
+  .sck-notes-submit-btn {
+    width: 100% !important;
+    max-width: 280px !important;
+    padding: 12px 24px !important;
+  }
+}
+
+/* 8. Modals (Review Modal, Lightbox, Article Modal) */
+@media (max-width: 600px) {
+  .modal-backdrop {
+    padding: 14px !important;
+  }
+
+  .booking-modal-card,
+  .sck-review-modal-card {
+    padding: 24px 16px 20px !important;
+    border-radius: 12px !important;
+    max-height: 92vh !important;
+  }
+
+  .sck-review-title {
+    font-size: 22px !important;
+  }
+
+  .sck-star-picker-box {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: center !important;
+    padding: 14px 10px !important;
+  }
+
+  .sck-stars-row {
+    gap: 6px !important;
+  }
+
+  .sck-star-btn {
+    padding: 4px !important;
+  }
+
+  .sck-submit-review-btn {
+    width: 100% !important;
+    padding: 13px !important;
+    font-size: 13.5px !important;
+  }
+
+  /* Lightbox */
+  .lightbox-modal {
+    padding: 12px !important;
+  }
+
+  .lightbox-content {
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+    border-radius: 12px !important;
+  }
+
+  .lightbox-img-wrap {
+    min-height: 220px !important;
+    max-height: 260px !important;
+  }
+
+  .lightbox-details {
+    padding: 20px 16px !important;
+  }
+
+  .lightbox-title {
+    font-size: 20px !important;
+  }
+
+  .lightbox-desc {
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Article Modal */
+  .sck-article-modal {
+    width: 96% !important;
+    padding: 22px 16px !important;
+    max-height: 92vh !important;
+    overflow-y: auto !important;
+    border-radius: 12px !important;
+  }
+
+  .sck-article-modal-title {
+    font-size: 21px !important;
+    line-height: 1.3 !important;
+  }
+
+  .sck-article-modal-body {
+    font-size: 14px !important;
+    line-height: 1.65 !important;
+  }
+
+  .sck-article-modal-footer {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  .sck-article-modal-footer button {
+    width: 100% !important;
+  }
+}
+
+/* 9. Dedicated Subpages Responsive Refinement */
+@media (max-width: 768px) {
+  /* About Page */
+  .sck-about-lead-grid {
+    grid-template-columns: 1fr !important;
+    gap: 30px !important;
+  }
+
+  .sck-about-stats-strip {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .sck-about-stat-box {
+    padding: 14px 18px !important;
+  }
+
+  .sck-about-split {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sck-about-text-col {
+    padding: 40px 16px !important;
+  }
+
+  .sck-about-title {
+    font-size: 24px !important;
+  }
+
+  .sck-about-photo-col,
+  .sck-about-photo-frame {
+    min-height: 260px !important;
+  }
+
+  /* Team Page */
+  .sck-team-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .sck-team-card {
+    padding: 20px 16px !important;
+  }
+
+  .sck-team-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+  }
+
+  .sck-team-name {
+    font-size: 19px !important;
+  }
+
+  .sck-team-bio {
+    font-size: 13px !important;
+  }
+
+  .sck-spec-tags {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .sck-team-book-btn {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 11px !important;
+  }
+
+  /* Bridal Page */
+  .sck-bridal-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .sck-bridal-card {
+    padding: 24px 18px !important;
+  }
+
+  .sck-bridal-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .sck-bridal-info-banner {
+    flex-direction: column !important;
+    gap: 16px !important;
+    padding: 24px 18px !important;
+  }
+
+  .sck-bridal-info-banner button {
+    width: 100% !important;
+  }
+
+  /* Contact Page */
+  .sck-contact-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  .sck-contact-info-card,
+  .sck-contact-hours-card,
+  .sck-contact-form-card {
+    padding: 24px 18px !important;
+  }
+
+  .sck-contact-card-title {
+    font-size: 21px !important;
+  }
+
+  .sck-info-item {
+    gap: 12px !important;
+  }
+
+  .sck-transit-box {
+    padding: 14px 16px !important;
+  }
+
+  /* Careers Page */
+  .sck-careers-container {
+    grid-template-columns: 1fr !important;
+    gap: 30px !important;
+  }
+
+  .sck-form-row {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .sck-career-apply-card {
+    padding: 24px 18px !important;
+  }
+
+  /* Policy Page */
+  .sck-policy-item {
+    padding: 20px 16px !important;
+  }
+
+  .sck-policy-title {
+    font-size: 17px !important;
+  }
+
+  .sck-policy-text {
+    font-size: 13.5px !important;
+  }
+
+  /* Footer */
+  .footer {
+    padding: 44px 16px 30px !important;
+  }
+
+  .footer-content-grid {
+    grid-template-columns: 1fr !important;
+    gap: 30px !important;
+  }
+
+  .footer-brand-title {
+    font-size: 24px !important;
+  }
+
+  .footer-bottom-bar {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 8px !important;
+  }
+
+  /* Floating Mobile Book Button */
+  .floating-mobile-book {
+    bottom: max(16px, env(safe-area-inset-bottom, 16px)) !important;
+    right: 16px !important;
+    padding: 11px 20px !important;
+    font-size: 12px !important;
+    border-radius: 999px !important;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(255, 144, 0, 0.4) !important;
+  }
+}
+
+/* ============================================================
+   10. ADMIN CONSOLE MOBILE & SMALL RESOLUTION RESPONSIVENESS
+   ============================================================ */
+@media (max-width: 900px) {
+  /* Admin Layout & Structure */
+  .sck-admin-layout {
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .sck-admin-sidebar {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding: 8px 10px !important;
+    position: sticky !important;
+    top: 54px !important;
+    z-index: 35 !important;
+    background: #0d0b0d !important;
+    box-sizing: border-box !important;
+  }
+
+  .sck-admin-sidebar-menu {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  .sck-admin-sidebar-menu::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .sck-sidebar-tab {
+    flex-shrink: 0 !important;
+    width: auto !important;
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    border-left: none !important;
+    border-bottom: 2px solid transparent !important;
+    border-radius: 6px !important;
+    gap: 6px !important;
+  }
+
+  .sck-sidebar-tab.is-active {
+    border-left: none !important;
+    border-bottom: 2px solid #ff9000 !important;
+    background: rgba(255, 144, 0, 0.12) !important;
+    color: #ff9000 !important;
+  }
+
+  .sck-tab-badge {
+    margin-left: 4px !important;
+    font-size: 10px !important;
+    padding: 1px 6px !important;
+  }
+
+  .sck-sidebar-footer {
+    display: none !important;
+  }
+
+  .sck-admin-main {
+    padding: 16px 12px 60px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .sck-tab-pane {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Topbar */
+  .sck-admin-topbar {
+    padding: 8px 12px !important;
+    min-height: 54px !important;
+    height: auto !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .sck-admin-topbar-left {
+    gap: 8px !important;
+  }
+
+  .sck-admin-brand {
+    font-size: 13.5px !important;
+  }
+
+  .sck-admin-env-pill {
+    display: none !important;
+  }
+
+  .sck-admin-topbar-right {
+    gap: 6px !important;
+    margin-left: auto !important;
+  }
+
+  .sck-admin-user-info {
+    display: none !important;
+  }
+
+  .sck-google-topbar-pill {
+    display: none !important;
+  }
+
+  .sck-admin-user-profile {
+    padding: 3px 6px !important;
+    gap: 6px !important;
+  }
+
+  .sck-admin-nav-btn {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+  }
+
+  .sck-admin-nav-btn span {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Admin Lock & Security Screens */
+  .sck-admin-lock-screen {
+    padding: 16px 10px !important;
+  }
+
+  .sck-admin-lock-card {
+    padding: 24px 16px !important;
+    width: 100% !important;
+    max-width: 360px !important;
+    border-radius: 12px !important;
+  }
+
+  .sck-admin-lock-icon {
+    width: 56px !important;
+    height: 56px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .sck-admin-lock-title {
+    font-size: 20px !important;
+  }
+
+  .sck-admin-lock-subtitle {
+    font-size: 12.5px !important;
+  }
+
+  .sck-google-signin-btn {
+    padding: 11px 14px !important;
+    font-size: 13px !important;
+    width: 100% !important;
+  }
+
+  .sck-denied-user-box {
+    padding: 12px !important;
+  }
+
+  .sck-denied-email {
+    font-size: 12px !important;
+    word-break: break-all !important;
+  }
+
+  .sck-denied-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  .sck-denied-actions button {
+    width: 100% !important;
+  }
+
+  /* Pane Headers & Action Buttons */
+  .sck-pane-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    margin-bottom: 18px !important;
+  }
+
+  .sck-pane-title {
+    font-size: 20px !important;
+  }
+
+  .sck-pane-subtitle {
+    font-size: 12px !important;
+  }
+
+  .sck-pane-actions {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .sck-pane-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Stats Cards Grid */
+  .sck-admin-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .sck-stat-card {
+    padding: 12px 10px !important;
+    border-radius: 8px !important;
+  }
+
+  .sck-stat-value {
+    font-size: 20px !important;
+  }
+
+  .sck-stat-label {
+    font-size: 11px !important;
+  }
+
+  .sck-stat-icon {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Filter Controls Bars */
+  .sck-date-controls-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+
+  .sck-date-filter-tabs {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+    padding-bottom: 4px !important;
+  }
+
+  .sck-date-filter-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .sck-date-tab-btn {
+    flex-shrink: 0 !important;
+    padding: 5px 9px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  .sck-custom-date-wrap {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .sck-custom-date-input {
+    width: 100% !important;
+  }
+
+  .sck-view-mode-tabs {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .sck-view-mode-btn {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
+
+  /* Tables */
+  .sck-table-responsive {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 6px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .sck-admin-table,
+  .sck-bookings-table,
+  .sck-accounts-table {
+    min-width: 600px !important;
+    font-size: 12px !important;
+  }
+
+  .sck-admin-table th,
+  .sck-bookings-table th,
+  .sck-accounts-table th {
+    padding: 10px 12px !important;
+    font-size: 10px !important;
+  }
+
+  .sck-admin-table td,
+  .sck-bookings-table td,
+  .sck-accounts-table td {
+    padding: 10px 12px !important;
+  }
+
+  /* Daily Schedule / Agenda */
+  .sck-agenda-card {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    padding: 12px 10px !important;
+  }
+
+  .sck-agenda-time-box {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  .sck-agenda-actions-box {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .sck-agenda-actions-box button,
+  .sck-agenda-actions-box select {
+    flex: 1 !important;
+  }
+
+  /* Timetable Grid */
+  .sck-schedule-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .sck-day-card {
+    padding: 12px 10px !important;
+  }
+
+  .sck-day-hours {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  /* Services & Reviews & System Grids Single Column */
+  .sck-services-admin-grid,
+  .sck-reviews-admin-grid,
+  .sck-admin-system-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .sck-srv-admin-card,
+  .sck-rev-admin-card,
+  .sck-system-card {
+    padding: 14px 12px !important;
+    border-radius: 8px !important;
+  }
+
+  .sck-srv-admin-meta {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Agenda Headers */
+  .sck-agenda-group-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+  }
+
+  .sck-agenda-group-title {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    font-size: 13px !important;
+  }
+
+  /* Admin Modals & Dialogs on Small Resolutions */
+  .sck-modal-backdrop {
+    padding: 10px !important;
+  }
+
+  .sck-modal-dialog {
+    padding: 18px 14px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    border-radius: 10px !important;
+  }
+
+  .sck-form-grid-2,
+  .sck-form-grid-3,
+  .sck-form-grid-4 {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .sck-modal-form-row {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .sck-modal-actions,
+  .sck-modal-form-actions {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .sck-modal-actions button,
+  .sck-modal-form-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* 16px Font Size on Mobile to prevent iOS Safari auto-zoom */
+  .sck-form-row input,
+  .sck-form-row select,
+  .sck-form-row textarea,
+  .sck-admin-edit-price,
+  .sck-custom-date-input {
+    font-size: 16px !important;
+  }
+}
+
+/* Extra Small Mobile: 320px - 380px */
+@media (max-width: 380px) {
+  .sck-admin-topbar {
+    padding: 6px 8px !important;
+  }
+
+  .sck-admin-brand {
+    font-size: 12px !important;
+  }
+
+  .sck-sidebar-tab {
+    padding: 6px 9px !important;
+    font-size: 11px !important;
+  }
+
+  .sck-admin-main {
+    padding: 12px 6px 50px !important;
+  }
+
+  .sck-pane-title {
+    font-size: 18px !important;
+  }
+
+  .sck-admin-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sck-stat-value {
+    font-size: 18px !important;
+  }
+}

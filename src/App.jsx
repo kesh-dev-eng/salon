@@ -74,7 +74,7 @@ function SparkleIcon({ size = 12 }) {
 /* ─── Available Time Slots ─── */
 const TIME_SLOTS = ['10:00 AM', '11:30 AM', '01:30 PM', '03:00 PM', '04:30 PM', '06:00 PM']
 
-/* ─── Salon HUB Authentic Interior Views ─── */
+/* ─── Barber Hub Authentic Interior Views ─── */
 const ABOUT_PHOTOS = [
   {
     id: 'floor',
@@ -369,25 +369,7 @@ export default function App() {
     const posAttribute = hairGeo.attributes.position
     const origPositions = posAttribute.array.slice()
 
-    const particleCount = window.innerWidth < 768 ? 140 : 280
-    const positions = new Float32Array(particleCount * 3)
-    for (let i = 0; i < particleCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 80
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 80
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 50 - 5
-    }
-    const particleGeo = new THREE.BufferGeometry()
-    particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    const particleMat = new THREE.PointsMaterial({
-      color: 0xff9000,
-      size: 0.26,
-      transparent: true,
-      opacity: 0.55,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    })
-    const particles = new THREE.Points(particleGeo, particleMat)
-    scene.add(particles)
+
 
     let mouseX = 0
     let mouseY = 0
@@ -425,9 +407,6 @@ export default function App() {
 
       hairMesh.rotation.y = targetX * 0.04
       hairMesh.rotation.x = -targetY * 0.03
-
-      particles.rotation.y += 0.0003
-      particles.rotation.x += 0.00015
 
       renderer.render(scene, camera)
       rafId = requestAnimationFrame(animate)
@@ -532,8 +511,6 @@ export default function App() {
       ctx.revert()
       hairGeo.dispose()
       hairMat.dispose()
-      particleGeo.dispose()
-      particleMat.dispose()
       renderer.dispose()
     }
   }, [])
@@ -571,7 +548,7 @@ export default function App() {
         <div
           className={`sck-preloader-screen ${isLoaderFading ? 'is-fading' : ''}`}
           role="status"
-          aria-label="Loading Salon HUB"
+          aria-label="Loading Barber Hub"
         >
           <Loader />
         </div>
@@ -583,22 +560,21 @@ export default function App() {
       <div className="grain" aria-hidden="true" />
       <div className="vignette" aria-hidden="true" />
 
-      {/* HUB Luxury Navigation Header */}
+      {/* Barber Hub Luxury Navigation Header */}
       {currentPage !== 'admin' && (
         <header className="sck-header">
         <nav className="sck-nav" aria-label="Main Navigation">
-          {/* Square HUB Logo */}
+          {/* Barber Hub Logo Box */}
           <a
             href="/"
             className="sck-logo-box"
-            aria-label="Salon HUB Home"
+            aria-label="Barber Hub Home"
             onClick={(e) => {
               e.preventDefault()
               navigateTo('home')
             }}
           >
-            <span className="sck-logo-italic">salon</span>
-            <span className="sck-logo-bold">HUB</span>
+            <img src="/logo.png" alt="Barber Hub" className="sck-logo-img" />
           </a>
 
           {/* Desktop Nav Links */}
@@ -714,17 +690,19 @@ export default function App() {
           {/* Right Action Buttons */}
           <div className="sck-actions">
             {/* Book Now Button */}
-            <a
-              href="/booking"
-              className="sck-btn-teal sck-book-btn"
-              style={{ textDecoration: 'none' }}
-              onClick={(e) => {
-                e.preventDefault()
-                openBookingTab()
-              }}
-            >
-              Book Now
-            </a>
+            {currentPage !== 'booking' && (
+              <a
+                href="/booking"
+                className="sck-btn-teal sck-book-btn"
+                style={{ textDecoration: 'none' }}
+                onClick={(e) => {
+                  e.preventDefault()
+                  openBookingTab()
+                }}
+              >
+                Book Now
+              </a>
+            )}
 
             {/* Mobile Hamburger */}
             <button
@@ -864,6 +842,10 @@ export default function App() {
         </button>
 
         <div className="mobile-drawer-links">
+          <div className="mobile-drawer-brand-header">
+            <img src="/logo.png" alt="Barber Hub" className="mobile-drawer-logo-img" />
+            <span className="mobile-drawer-brand-title">Barber Hub</span>
+          </div>
           <a
             href="/"
             className={currentPage === 'home' ? 'is-active' : ''}
@@ -966,21 +948,21 @@ export default function App() {
       <main>
         {currentPage === 'home' && (
           <>
-            {/* HERO SECTION — SALON HUB */}
+            {/* HERO SECTION — BARBER HUB */}
         <section className="sck-hero" id="home">
           <div className="sck-hero-bg" aria-hidden="true">
             <img
               src="/images/hero-blonde.jpg"
-              alt="Salon HUB Luxury Blonde Hairstyle"
+              alt="Barber Hub Luxury Grooming & Hairstyle"
               className="sck-hero-image"
             />
             <div className="sck-hero-overlay" />
           </div>
 
           <div className="sck-hero-content gsap-reveal">
-            <h1 className="sck-hero-title">Salon HUB</h1>
+            <h1 className="sck-hero-title">Barber Hub</h1>
             <p className="sck-hero-subtitle">
-              <em>Luxury Hair Salon located on Fifth Avenue</em>
+              <em>Luxury Grooming &amp; Hair Salon located on Fifth Avenue</em>
             </p>
             <button
               type="button"
@@ -992,12 +974,12 @@ export default function App() {
           </div>
         </section>
 
-        {/* OUR SERVICES SECTION (7 Main Topics from Salon HUB) */}
+        {/* OUR SERVICES SECTION */}
         <section id="services" className="sck-services-section">
           <div className="sck-section-header gsap-reveal">
             <h2 className="sck-section-title">Our Services</h2>
             <p className="sck-section-subtitle">
-              We customize an individual look for each client using Balayage, Highlights, Color and Precision Cuts. Salon HUB also offers Blow Dries, Hair Extensions, Smoothing Treatments, Custom Blended Makeup, Manicure and Pedicure.
+              We customize an individual look for each client using precision cuts, master barbering, beard sculpting, balayage, and restorative treatments. Barber Hub also offers blow dries, smoothing treatments, custom blended makeup, manicure and pedicure.
             </p>
           </div>
 
@@ -1030,10 +1012,18 @@ export default function App() {
                       <span className="sck-service-price">{formatPrice(service.price)}</span>
                     </div>
                     <p className="sck-service-desc">{service.desc}</p>
-                    <div className="sck-service-book-btn">
+                    <button
+                      type="button"
+                      className="sck-service-book-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openBookingTab(service.name)
+                      }}
+                      aria-label={`Reserve session for ${service.name}`}
+                    >
                       <span>Reserve Session</span>
                       <span className="sck-service-arrow" aria-hidden="true">→</span>
-                    </div>
+                    </button>
                   </div>
                 </div>
 
@@ -1078,12 +1068,12 @@ export default function App() {
             {/* LEFT: Text column */}
             <div className="sck-about-text-col gsap-reveal">
               <span className="sck-about-label">About Us</span>
-              <h2 className="sck-about-title">Crafted Beauty, Centered Around You</h2>
+              <h2 className="sck-about-title">Crafted Grooming &amp; Styling, Centered Around You</h2>
               <p className="sck-about-body">
-                Salon HUB is a luxury hair salon on Fifth Avenue in the heart of New York City, where artisan craftsmanship and genuine personalization define every visit. From signature balayage and precision cuts to transformative color and conditioning treatments by Kérastase, Olaplex, and Shu Uemura, each service is designed around you — not a template.
+                Barber Hub is a luxury grooming atelier and hair salon on Fifth Avenue in the heart of New York City, where artisan craftsmanship and genuine personalization define every visit. From signature balayage and precision cuts to transformative color and conditioning treatments by Kérastase, Olaplex, and Shu Uemura, each service is designed around you — not a template.
               </p>
               <p className="sck-about-body">
-                What sets this salon apart is the seamless blend of elevated technique and warm, attentive care. Whether you are seeking a bespoke color transformation, a polished blowout, or a full bridal experience, the team approaches every appointment with the same level of precision and artistry. This is beauty on your terms, crafted with intention.
+                What sets this atelier apart is the seamless blend of elevated barbering technique, master color formulations, and warm, attentive care. Whether you are seeking a sharp fade, bespoke beard design, custom color transformation, or a polished blowout, the team approaches every appointment with the same level of precision and artistry.
               </p>
               <button
                 type="button"
@@ -1101,26 +1091,33 @@ export default function App() {
                   key={ABOUT_PHOTOS[aboutPhotoIdx].id}
                   src={ABOUT_PHOTOS[aboutPhotoIdx].src}
                   alt={ABOUT_PHOTOS[aboutPhotoIdx].title}
-                  className="sck-about-split-img"
+                  className="sck-about-photo"
                 />
-                {/* Prev arrow */}
-                <button
-                  type="button"
-                  className="sck-about-arrow sck-about-arrow-prev"
-                  aria-label="Previous photo"
-                  onClick={() => setAboutPhotoIdx((aboutPhotoIdx - 1 + ABOUT_PHOTOS.length) % ABOUT_PHOTOS.length)}
-                >
-                  ←
-                </button>
-                {/* Next arrow */}
-                <button
-                  type="button"
-                  className="sck-about-arrow sck-about-arrow-next"
-                  aria-label="Next photo"
-                  onClick={() => setAboutPhotoIdx((aboutPhotoIdx + 1) % ABOUT_PHOTOS.length)}
-                >
-                  →
-                </button>
+                <div className="sck-about-photo-caption">
+                  <span className="sck-photo-caption-title">{ABOUT_PHOTOS[aboutPhotoIdx].title}</span>
+                  <span className="sck-photo-caption-sub">{ABOUT_PHOTOS[aboutPhotoIdx].subtitle}</span>
+                </div>
+                <div className="sck-about-photo-nav">
+                  <button
+                    type="button"
+                    className="sck-photo-nav-btn"
+                    onClick={() => setAboutPhotoIdx((prev) => (prev === 0 ? ABOUT_PHOTOS.length - 1 : prev - 1))}
+                    aria-label="Previous photo"
+                  >
+                    ‹
+                  </button>
+                  <span className="sck-photo-counter">
+                    {aboutPhotoIdx + 1} / {ABOUT_PHOTOS.length}
+                  </span>
+                  <button
+                    type="button"
+                    className="sck-photo-nav-btn"
+                    onClick={() => setAboutPhotoIdx((prev) => (prev === ABOUT_PHOTOS.length - 1 ? 0 : prev + 1))}
+                    aria-label="Next photo"
+                  >
+                    ›
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1135,25 +1132,33 @@ export default function App() {
               <button
                 type="button"
                 className="sck-notes-nav-btn sck-notes-prev"
-                onClick={() => setActiveReviewIdx((prev) => (prev === 0 ? reviews.length - 1 : prev - 1))}
+                onClick={() => setActiveReviewIdx((prev) => (reviews.length <= 1 ? 0 : prev === 0 ? reviews.length - 1 : prev - 1))}
                 aria-label="Previous review"
               >
                 <span aria-hidden="true">←</span>
               </button>
 
               <div className="sck-notes-quote-box">
+                <div style={{ color: '#ffaa33', fontSize: '18px', letterSpacing: '4px', marginBottom: '14px' }} aria-label="5 stars">
+                  {reviews[activeReviewIdx]?.stars || '★★★★★'}
+                </div>
                 <p className="sck-notes-quote-text">
-                  {reviews[activeReviewIdx]?.quote || "I have been a client of SKC since they opened. They are the best. I won't go anywhere else. My hair is curly and they do an amazing job. Always have"}
+                  "{reviews[activeReviewIdx]?.quote || "I have been a client of Barber Hub since they opened. They are the best. I won't go anywhere else. My hair is curly and they do an amazing job. Always have"}"
                 </p>
                 <div className="sck-notes-author">
                   {reviews[activeReviewIdx]?.author || 'Carolyn Pianin'}
+                  {reviews[activeReviewIdx]?.service && (
+                    <span style={{ opacity: 0.75, fontWeight: 400, marginLeft: '8px', fontSize: '13px', textTransform: 'none' }}>
+                      · {reviews[activeReviewIdx].service}
+                    </span>
+                  )}
                 </div>
               </div>
 
               <button
                 type="button"
                 className="sck-notes-nav-btn sck-notes-next"
-                onClick={() => setActiveReviewIdx((prev) => (prev === reviews.length - 1 ? 0 : prev + 1))}
+                onClick={() => setActiveReviewIdx((prev) => (reviews.length <= 1 ? 0 : prev === reviews.length - 1 ? 0 : prev + 1))}
                 aria-label="Next review"
               >
                 <span aria-hidden="true">→</span>
@@ -1174,6 +1179,7 @@ export default function App() {
             </div>
           </div>
         </section>
+
           </>
         )}
 
@@ -1181,49 +1187,32 @@ export default function App() {
           <ServicesPage
             services={services}
             activeCategory={activeServiceCategory}
-            onSelectCategory={setActiveServiceCategory}
-            onBookService={(srv) => openBookingTab(srv.name)}
+            onBookService={(srvName) => openBookingTab(srvName)}
           />
         )}
 
         {currentPage === 'about' && (
-          <AboutPage
-            onBookClick={() => openBookingTab()}
-            onNavigate={navigateTo}
-          />
-        )}
-
-        {currentPage === 'blog' && (
-          <BlogPage
-            onBookClick={() => openBookingTab()}
-          />
-        )}
-
-        {currentPage === 'team' && (
-          <TeamPage
-            onBookWithStylist={(member) => {
-              const matchedCategory = member?.role?.toLowerCase().includes('color') ? 'Color' : 'Cut & Styling'
-              openBookingTab(matchedCategory)
-            }}
-          />
-        )}
-
-        {currentPage === 'contact' && (
-          <ContactPage
-            onBookClick={() => openBookingTab()}
-          />
+          <AboutPage onBookNow={() => openBookingTab()} />
         )}
 
         {currentPage === 'bridal' && (
-          <BridalPage
-            onBookClick={() => openBookingTab('Bridal')}
-          />
+          <BridalPage onBookPackage={(pkgName) => openBookingTab(pkgName)} />
         )}
 
         {currentPage === 'policy' && (
-          <PolicyPage
-            onBookClick={() => openBookingTab()}
-          />
+          <PolicyPage />
+        )}
+
+        {currentPage === 'team' && (
+          <TeamPage onBookStylist={(stylistName) => openBookingTab(stylistName)} />
+        )}
+
+        {currentPage === 'blog' && (
+          <BlogPage onBookNow={() => openBookingTab()} />
+        )}
+
+        {currentPage === 'contact' && (
+          <ContactPage onBookNow={() => openBookingTab()} />
         )}
 
         {currentPage === 'careers' && (
@@ -1236,8 +1225,8 @@ export default function App() {
             bookings={bookings}
             timetable={timetable}
             preselectedService={bookingPreselectedService}
-            onBookSuccess={(newBooking) => {
-              setBookings((prev) => [newBooking, ...prev])
+            onBookSuccess={(newEntry) => {
+              handleSaveBooking(newEntry)
             }}
             onNavigate={navigateTo}
           />
@@ -1265,15 +1254,20 @@ export default function App() {
           <footer className="footer" id="footer">
             <div className="footer-content-grid">
               <div className="footer-col-brand">
-                <div className="footer-brand-title">Salon HUB</div>
-                <div className="footer-brand-sub">Luxury Hair Salon located on Fifth Avenue</div>
+                <div className="footer-brand-header">
+                  <img src="/logo.png" alt="Barber Hub" className="footer-brand-logo-img" />
+                  <div>
+                    <div className="footer-brand-title">Barber Hub</div>
+                    <div className="footer-brand-sub">Luxury Grooming &amp; Hair Salon on Fifth Avenue</div>
+                  </div>
+                </div>
                 <p className="footer-brand-desc">
-                  Bespoke haircuts, dimensional balayage, custom color, and couture styling in the heart of Midtown Manhattan.
+                  Bespoke haircuts, precision beard sculpting, dimensional balayage, custom color, and couture styling in the heart of Midtown Manhattan.
                 </p>
               </div>
 
               <div className="footer-col-links">
-                <div className="footer-col-title">Salon HUB</div>
+                <div className="footer-col-title">Barber Hub</div>
                 <a href="/" onClick={(e) => { e.preventDefault(); navigateTo('home') }}>Home</a>
                 <a href="/services" onClick={(e) => { e.preventDefault(); navigateTo('services') }}>Our Services</a>
                 <a href="/about" onClick={(e) => { e.preventDefault(); navigateTo('about') }}>About Us</a>
@@ -1287,32 +1281,34 @@ export default function App() {
               </div>
 
               <div className="footer-col-info">
-                <div className="footer-col-title">Visit Salon HUB</div>
+                <div className="footer-col-title">Visit Barber Hub</div>
                 <p>Fifth Avenue, Midtown Manhattan, New York, NY</p>
                 <p>Tue – Sat: 9:00 AM – 7:00 PM</p>
-                <a href="mailto:info@salonhub.com" className="footer-email-link">info@salonhub.com</a>
+                <a href="mailto:info@barberhub.com" className="footer-email-link">info@barberhub.com</a>
               </div>
             </div>
 
             <div className="footer-bottom-bar">
-              <p>© 2025 Salon HUB · Fifth Avenue, New York · All rights reserved.</p>
-              <span className="footer-disclaimer">Luxury Hair Salon Experience</span>
+              <p>© 2025 Barber Hub · Fifth Avenue, New York · All rights reserved.</p>
+              <span className="footer-disclaimer">Luxury Grooming &amp; Hair Salon Experience</span>
             </div>
           </footer>
 
           {/* FLOATING MOBILE BOOKING BUTTON */}
-          <a
-            href="/booking"
-            onClick={(e) => {
-              e.preventDefault()
-              openBookingTab()
-            }}
-            className="floating-mobile-book"
-            aria-label="Book Chair"
-            style={{ textDecoration: 'none' }}
-          >
-            <span>Reserve Chair</span>
-          </a>
+          {currentPage !== 'booking' && (
+            <a
+              href="/booking"
+              onClick={(e) => {
+                e.preventDefault()
+                openBookingTab()
+              }}
+              className="floating-mobile-book"
+              aria-label="Book Chair"
+              style={{ textDecoration: 'none' }}
+            >
+              <span>Reserve Chair</span>
+            </a>
+          )}
         </>
       )}
 
@@ -1390,7 +1386,7 @@ export default function App() {
             {!reviewSubmitted ? (
               <form onSubmit={handleReviewSubmit}>
                 <div className="sck-review-header">
-                  <div className="sck-review-eyebrow">SALON HUB • FIFTH AVENUE NYC</div>
+                  <div className="sck-review-eyebrow">BARBER HUB • FIFTH AVENUE NYC</div>
                   <h2 className="sck-review-title">Leave a Client Note</h2>
                   <p className="sck-review-desc">
                     Your testimonial will appear directly in our Notes From Our Clients section and helps shape our bespoke craft.

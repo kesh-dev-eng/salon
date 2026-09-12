@@ -116,7 +116,20 @@ export default function ServicesPage({
       <section className="sck-catalog-grid-wrap">
         <div className="sck-catalog-grid">
           {filtered.map((service) => (
-            <article key={service.id} className="sck-service-card card">
+            <article
+              key={service.id}
+              className="sck-service-card card"
+              onClick={() => onBookService(service)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onBookService(service)
+                }
+              }}
+              aria-label={`Book ${service.name}`}
+            >
               {/* First Content — Default Front View */}
               <div className="first-content">
                 <div className="sck-service-img-wrap">
@@ -136,9 +149,16 @@ export default function ServicesPage({
                   <p className="sck-service-card-desc">{service.desc}</p>
                   <div className="sck-service-card-footer">
                     <span className="sck-service-duration">{service.duration}</span>
-                    <div className="sck-service-card-book-btn">
+                    <button
+                      type="button"
+                      className="sck-service-card-book-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onBookService(service)
+                      }}
+                    >
                       Book Now →
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -156,7 +176,10 @@ export default function ServicesPage({
                 <button
                   type="button"
                   className="sck-second-book-btn"
-                  onClick={() => onBookService(service)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onBookService(service)
+                  }}
                 >
                   <span>Book Appointment</span>
                   <span className="sck-service-arrow" aria-hidden="true">→</span>
@@ -173,7 +196,7 @@ export default function ServicesPage({
               type="button"
               className="sck-btn-teal"
               onClick={() => {
-                setActiveCategory('all')
+                handleSelectCat('all')
                 setSearchQuery('')
               }}
             >

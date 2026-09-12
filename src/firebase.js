@@ -46,15 +46,15 @@ export { app, auth, googleProvider, analytics }
 export const DEFAULT_GOOGLE_PROFILES = [
   {
     id: 'admin',
-    displayName: 'Salon HUB Admin',
-    email: 'admin@salonhub.com',
+    displayName: 'Barber Hub Admin',
+    email: 'admin@barberhub.com',
     role: 'Managing Director',
     photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80'
   },
   {
     id: 'director',
     displayName: 'Elena Vance',
-    email: 'director@salonhub.com',
+    email: 'director@barberhub.com',
     role: 'Creative Director',
     photoURL: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&q=80'
   }

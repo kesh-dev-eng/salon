@@ -75,6 +75,37 @@ function calculateEndTime(startTimeStr, durationStr = '60 min') {
   }
 }
 
+export function parseSlotDateTime(dateStr, timeStr) {
+  try {
+    if (!dateStr || !timeStr) return null
+    const parts = dateStr.split('-')
+    if (parts.length !== 3) return null
+    const year = parseInt(parts[0], 10)
+    const month = parseInt(parts[1], 10)
+    const day = parseInt(parts[2], 10)
+
+    const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+    if (!match) return null
+
+    let hours = parseInt(match[1], 10)
+    const minutes = parseInt(match[2], 10)
+    const ampm = match[3].toUpperCase()
+
+    if (ampm === 'PM' && hours !== 12) hours += 12
+    if (ampm === 'AM' && hours === 12) hours = 0
+
+    return new Date(year, month - 1, day, hours, minutes, 0, 0)
+  } catch {
+    return null
+  }
+}
+
+export function isSlotPassed(dateStr, timeStr, refTime = new Date()) {
+  const slotDate = parseSlotDateTime(dateStr, timeStr)
+  if (!slotDate) return false
+  return slotDate.getTime() <= refTime.getTime()
+}
+
 export default function BookingPage({
   services = INITIAL_SERVICES,
   bookings = [],
@@ -150,8 +181,18 @@ export default function BookingPage({
     }
   }, [preselectedService, services])
 
+  // Real-time clock state (updates every 15s to keep slot availability strictly real-time)
+  const [currentRealTime, setCurrentRealTime] = useState(() => new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentRealTime(new Date())
+    }, 15000)
+    return () => clearInterval(timer)
+  }, [])
+
   // Date states
-  const today = useMemo(() => new Date(), [])
+  const today = currentRealTime
   const [currentDateObj, setCurrentDateObj] = useState(() => {
     const d = new Date()
     d.setDate(d.getDate() + 1)
@@ -240,7 +281,7 @@ export default function BookingPage({
     if (isDateClosed(calYear, calMonth, dayNum)) {
       const d = new Date(calYear, calMonth, dayNum)
       const dayName = DAY_NAMES[d.getDay()]
-      setSlotConflictMsg(`Notice: Salon HUB is closed on ${dayName}s. Please choose an open day.`)
+      setSlotConflictMsg(`Notice: Barber Hub is closed on ${dayName}s. Please choose an open day.`)
       return
     }
     const mm = String(calMonth + 1).padStart(2, '0')
@@ -286,24 +327,31 @@ export default function BookingPage({
     return set
   }, [allBookings, bookingDate])
 
-  // Automatically switch bookingTime if the current selection is already booked for this date
+  // Automatically switch bookingTime if the current selection is already booked or passed for this date
   useEffect(() => {
     const norm = normalizeTimeStr(bookingTime)
-    const pool = timetable?.timeSlots && Array.isArray(timetable.timeSlots) && timetable.timeSlots.length > 0
-      ? timetable.timeSlots.filter((s) => s.active !== false)
-      : TIME_SLOTS_DATA
-    if (bookedTimesOnSelectedDate.has(norm)) {
+    const isBooked = bookedTimesOnSelectedDate.has(norm)
+    const isPassed = isSlotPassed(bookingDate, bookingTime, currentRealTime)
+
+    if (isBooked || isPassed) {
+      const pool = timetable?.timeSlots && Array.isArray(timetable.timeSlots) && timetable.timeSlots.length > 0
+        ? timetable.timeSlots.filter((s) => s.active !== false)
+        : TIME_SLOTS_DATA
       const firstAvailable = pool.find(
-        (s) => !bookedTimesOnSelectedDate.has(normalizeTimeStr(s.time))
+        (s) => !bookedTimesOnSelectedDate.has(normalizeTimeStr(s.time)) && !isSlotPassed(bookingDate, s.time, currentRealTime)
       )
       if (firstAvailable) {
         setBookingTime(firstAvailable.time)
       }
     }
-  }, [bookedTimesOnSelectedDate, bookingDate, timetable])
+  }, [bookedTimesOnSelectedDate, bookingDate, timetable, currentRealTime, bookingTime])
 
   const handleApplyCustomTime = () => {
     const timeStr = `${customHour}:${customMin} ${customAmpm}`
+    if (isSlotPassed(bookingDate, timeStr, currentRealTime)) {
+      setSlotConflictMsg(`Notice: The time ${timeStr} has already passed for today (${formattedSelectedDate}). Please select an upcoming time slot.`)
+      return
+    }
     if (bookedTimesOnSelectedDate.has(normalizeTimeStr(timeStr))) {
       setSlotConflictMsg(`Notice: The time slot ${timeStr} has already been reserved for this date. Please choose another time.`)
       return
@@ -343,7 +391,15 @@ export default function BookingPage({
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // 1. Strict double-booking prevention check
+    // 1. Strict real-time passed-time check
+    if (isSlotPassed(bookingDate, bookingTime, currentRealTime)) {
+      setSlotConflictMsg(`Notice: The ${bookingTime} time slot on ${formattedSelectedDate} has already passed. Please choose an upcoming time slot or another date.`)
+      const el = document.querySelector('.sck-time-sets-card')
+      if (el) el.scrollIntoView({ behavior: 'smooth' })
+      return
+    }
+
+    // 2. Strict double-booking prevention check
     if (bookedTimesOnSelectedDate.has(normalizeTimeStr(bookingTime))) {
       setSlotConflictMsg(`Notice: The ${bookingTime} time slot on ${formattedSelectedDate} has already been reserved. Please choose an open slot.`)
       const el = document.querySelector('.sck-time-sets-card')
@@ -432,7 +488,10 @@ export default function BookingPage({
             <div className="sck-booking-card-wrapper">
               <form onSubmit={handleSubmit} className="sck-booking-full-form">
                 <div className="sck-booking-form-header">
-                  <span className="sck-booking-badge">Salon HUB Concierge</span>
+                  <div className="sck-booking-header-top">
+                    <img src="/logo.png" alt="Barber Hub" className="sck-booking-header-logo" />
+                    <span className="sck-booking-badge">Barber Hub Concierge</span>
+                  </div>
                   <h2 className="sck-booking-card-title">Schedule Your Fifth Avenue Appointment</h2>
                   <p className="sck-booking-card-subtitle">
                     Select your tailored treatment, date, and preferred time slot. Our team prepares bespoke formulations prior to your arrival.
@@ -671,23 +730,31 @@ export default function BookingPage({
                           {displayedTimeSlots.map((slot) => {
                             const normTime = normalizeTimeStr(slot.time)
                             const isBooked = bookedTimesOnSelectedDate.has(normTime)
-                            const isChosen = bookingTime === slot.time && !isBooked
+                            const isPassed = isSlotPassed(bookingDate, slot.time, currentRealTime)
+                            const isUnavailable = isBooked || isPassed
+                            const isChosen = bookingTime === slot.time && !isUnavailable
                             const finish = calculateEndTime(slot.time, selectedService?.duration || '60 min')
                             return (
                               <div
                                 key={slot.id}
-                                className={`sck-time-slot-card ${isChosen ? 'is-chosen' : ''} ${isBooked ? 'is-booked' : ''}`}
+                                className={`sck-time-slot-card ${isChosen ? 'is-chosen' : ''} ${isUnavailable ? 'is-booked is-passed' : ''}`}
                                 onClick={() => {
-                                  if (isBooked) return
+                                  if (isUnavailable) return
                                   setBookingTime(slot.time)
                                   setSlotConflictMsg(null)
                                 }}
                                 role="button"
-                                aria-disabled={isBooked}
-                                tabIndex={isBooked ? -1 : 0}
-                                title={isBooked ? `Reserved: ${slot.time} on ${formattedSelectedDate} is already booked` : `Select ${slot.time}`}
+                                aria-disabled={isUnavailable}
+                                tabIndex={isUnavailable ? -1 : 0}
+                                title={
+                                  isBooked
+                                    ? `Reserved: ${slot.time} on ${formattedSelectedDate} is already booked`
+                                    : isPassed
+                                    ? `Passed: ${slot.time} has already passed for today (${formattedSelectedDate})`
+                                    : `Select ${slot.time}`
+                                }
                                 onKeyDown={(e) => {
-                                  if (!isBooked && (e.key === 'Enter' || e.key === ' ')) {
+                                  if (!isUnavailable && (e.key === 'Enter' || e.key === ' ')) {
                                     setBookingTime(slot.time)
                                     setSlotConflictMsg(null)
                                   }
@@ -703,6 +770,14 @@ export default function BookingPage({
                                       </svg>
                                       Reserved
                                     </span>
+                                  ) : isPassed ? (
+                                    <span className="sck-time-badge is-booked is-passed-badge">
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{marginRight: 4, display: 'inline-block', verticalAlign: '-1px'}}>
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <polyline points="12 6 12 12 16 14"/>
+                                      </svg>
+                                      Passed
+                                    </span>
                                   ) : (
                                     <span className={`sck-time-badge is-${slot.badge.toLowerCase().replace(/\s+/g, '-')}`}>
                                       {slot.badge}
@@ -711,10 +786,12 @@ export default function BookingPage({
                                 </div>
                                 <div className="sck-time-slot-bottom">
                                   <span className="sck-time-slot-label">
-                                    {isBooked ? 'Slot Unavailable' : slot.label}
+                                    {isBooked ? 'Slot Unavailable' : isPassed ? 'Time Passed' : slot.label}
                                   </span>
                                   {isBooked ? (
                                     <span className="sck-time-finish is-booked-sub">Already Reserved</span>
+                                  ) : isPassed ? (
+                                    <span className="sck-time-finish is-booked-sub">Passed for Today</span>
                                   ) : (
                                     finish && <span className="sck-time-finish">until {finish}</span>
                                   )}
@@ -873,7 +950,7 @@ export default function BookingPage({
                       {selectedService?.name || 'Cut & Styling'} · Dedicated Chair
                     </div>
                     <div className="summary-datetime">
-                      {formattedSelectedDate} at {bookingTime} {calculatedEndTime ? `(until ${calculatedEndTime})` : ''} · Salon HUB, Fifth Avenue, NYC
+                      {formattedSelectedDate} at {bookingTime} {calculatedEndTime ? `(until ${calculatedEndTime})` : ''} · Barber Hub, Fifth Avenue, NYC
                     </div>
                   </div>
                   <div className="booking-summary-total">

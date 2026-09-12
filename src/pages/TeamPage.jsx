@@ -29,7 +29,7 @@ export default function TeamPage({ onBookWithStylist }) {
               The Artisans Of<br />Fifth Avenue
             </h1>
             <p className="sck-photo-hero-desc">
-              Every stylist, colorist, and extension specialist at Salon HUB brings international editorial training, genuine warmth, and a commitment to bespoke hair artistry.
+              Every stylist, colorist, and extension specialist at Barber Hub brings international editorial training, genuine warmth, and a commitment to bespoke hair artistry.
             </p>
             <button
               type="button"

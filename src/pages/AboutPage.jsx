@@ -37,7 +37,7 @@ export default function AboutPage({ onBookClick, onNavigate }) {
             <span className="sck-about-hero-card-eyebrow">About Us</span>
             <h2 className="sck-about-hero-card-title">Rooted In Craft. Known For Care.</h2>
             <p className="sck-about-hero-card-body">
-              Rooted in artisan craftsmanship and a genuine commitment to each guest, Salon HUB has built its reputation on Fifth Avenue by treating every appointment as a bespoke experience — never a routine one. Here, elevated technique and personalized care exist in equal measure, creating a space where expertise feels warm and luxury feels effortless.
+              Rooted in artisan craftsmanship and a genuine commitment to each guest, Barber Hub has built its reputation on Fifth Avenue by treating every appointment as a bespoke experience — never a routine one. Here, elevated technique and personalized care exist in equal measure, creating a space where expertise feels warm and luxury feels effortless.
             </p>
             <button
               type="button"
@@ -58,7 +58,7 @@ export default function AboutPage({ onBookClick, onNavigate }) {
               <span className="sck-gold-tag">OUR STORY &amp; PHILOSOPHY</span>
               <h2 className="sck-about-heading">A More Personal Kind of Luxury Salon</h2>
               <p className="sck-about-body-text">
-                Salon HUB was founded on the conviction that luxury hair care should feel genuinely attentive rather than intimidating or transactional. Located at <strong>587 Fifth Avenue</strong>, our fourth-floor space provides a sunlit, peaceful escape from the hustle of Midtown Manhattan.
+                Barber Hub was founded on the conviction that luxury hair care and bespoke barbering should feel genuinely attentive rather than intimidating or transactional. Located at <strong>587 Fifth Avenue</strong>, our fourth-floor space provides a sunlit, peaceful escape from the hustle of Midtown Manhattan.
               </p>
               <p className="sck-about-body-text">
                 From the moment you arrive, the focus is entirely on you — your lifestyle, your natural texture, and the bespoke aesthetic you wish to embody. Whether designing a lived-in balayage, carving a precision haircut, or administering botanical conditioning rituals, each service is treated as high-fashion artistry.
@@ -116,7 +116,7 @@ export default function AboutPage({ onBookClick, onNavigate }) {
         <div className="sck-pillars-container">
           <div className="sck-section-title-center">
             <span className="sck-gold-tag">WHAT SETS US APART</span>
-            <h2 className="sck-section-headline">The Salon HUB Standard</h2>
+            <h2 className="sck-section-headline">The Barber Hub Standard</h2>
           </div>
 
           <div className="sck-pillars-grid">
