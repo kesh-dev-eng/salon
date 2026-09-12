@@ -78,6 +78,7 @@ function calculateEndTime(startTimeStr, durationStr = '60 min') {
 export default function BookingPage({
   services = INITIAL_SERVICES,
   bookings = [],
+  timetable = {},
   preselectedService = null,
   onBookSuccess,
   onNavigate
@@ -227,7 +228,21 @@ export default function BookingPage({
     }
   }
 
+  const isDateClosed = (year, month, day) => {
+    if (!timetable?.workingDays || !Array.isArray(timetable.workingDays)) return false
+    const d = new Date(year, month, day)
+    const dayName = DAY_NAMES[d.getDay()]
+    const config = timetable.workingDays.find((item) => item.day === dayName)
+    return config ? config.isOpen === false : false
+  }
+
   const handleSelectDay = (dayNum) => {
+    if (isDateClosed(calYear, calMonth, dayNum)) {
+      const d = new Date(calYear, calMonth, dayNum)
+      const dayName = DAY_NAMES[d.getDay()]
+      setSlotConflictMsg(`Notice: Salon HUB is closed on ${dayName}s. Please choose an open day.`)
+      return
+    }
     const mm = String(calMonth + 1).padStart(2, '0')
     const dd = String(dayNum).padStart(2, '0')
     const newDateStr = `${calYear}-${mm}-${dd}`
@@ -274,15 +289,18 @@ export default function BookingPage({
   // Automatically switch bookingTime if the current selection is already booked for this date
   useEffect(() => {
     const norm = normalizeTimeStr(bookingTime)
+    const pool = timetable?.timeSlots && Array.isArray(timetable.timeSlots) && timetable.timeSlots.length > 0
+      ? timetable.timeSlots.filter((s) => s.active !== false)
+      : TIME_SLOTS_DATA
     if (bookedTimesOnSelectedDate.has(norm)) {
-      const firstAvailable = TIME_SLOTS_DATA.find(
+      const firstAvailable = pool.find(
         (s) => !bookedTimesOnSelectedDate.has(normalizeTimeStr(s.time))
       )
       if (firstAvailable) {
         setBookingTime(firstAvailable.time)
       }
     }
-  }, [bookedTimesOnSelectedDate, bookingDate])
+  }, [bookedTimesOnSelectedDate, bookingDate, timetable])
 
   const handleApplyCustomTime = () => {
     const timeStr = `${customHour}:${customMin} ${customAmpm}`
@@ -294,11 +312,14 @@ export default function BookingPage({
     setBookingTime(timeStr)
   }
 
-  // Filtered Time Slots
+  // Filtered Time Slots from Timetable
   const displayedTimeSlots = useMemo(() => {
-    if (timeFilter === 'all') return TIME_SLOTS_DATA
-    return TIME_SLOTS_DATA.filter((s) => s.period === timeFilter)
-  }, [timeFilter])
+    const slots = timetable?.timeSlots && Array.isArray(timetable.timeSlots) && timetable.timeSlots.length > 0
+      ? timetable.timeSlots.filter((s) => s.active !== false)
+      : TIME_SLOTS_DATA
+    if (timeFilter === 'all') return slots
+    return slots.filter((s) => s.period === timeFilter)
+  }, [timeFilter, timetable])
 
   // Formatted date string for estimate
   const formattedSelectedDate = useMemo(() => {
@@ -544,6 +565,7 @@ export default function BookingPage({
                           // Check if day is before today
                           const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate())
                           const isPast = checkDate < todayMidnight
+                          const isClosed = isDateClosed(calYear, calMonth, dayNum)
 
                           // Check if day is currently selected
                           const curTargetParts = bookingDate.split('-').map((p) => parseInt(p, 10))
@@ -561,12 +583,14 @@ export default function BookingPage({
                             <button
                               type="button"
                               key={`day-${dayNum}`}
-                              className={`sck-cal-day ${isSelected ? 'is-selected' : ''} ${isPast ? 'is-past' : ''} ${isToday ? 'is-today' : ''}`}
-                              disabled={isPast}
+                              className={`sck-cal-day ${isSelected ? 'is-selected' : ''} ${isPast ? 'is-past' : ''} ${isToday ? 'is-today' : ''} ${isClosed ? 'is-closed' : ''}`}
+                              disabled={isPast || isClosed}
                               onClick={() => handleSelectDay(dayNum)}
+                              title={isClosed ? 'Closed' : isPast ? 'Past date' : `Select day ${dayNum}`}
                             >
                               <span className="sck-cal-day-num">{dayNum}</span>
                               {isToday && <span className="sck-cal-today-dot" title="Today" />}
+                              {isClosed && <span className="sck-cal-closed-indicator">✕</span>}
                             </button>
                           )
                         })}
@@ -576,6 +600,7 @@ export default function BookingPage({
                         <span className="legend-item"><span className="legend-dot is-gold" /> Selected</span>
                         <span className="legend-item"><span className="legend-dot is-teal" /> Today</span>
                         <span className="legend-item"><span className="legend-dot is-muted" /> Available</span>
+                        <span className="legend-item"><span className="legend-dot is-closed" /> Closed</span>
                       </div>
                     </div>
 
@@ -777,24 +802,32 @@ export default function BookingPage({
                   </label>
                   <div className="guest-info-grid">
                     <div>
-                      <label className="input-sublabel" htmlFor="guest-name-input">Full Name *</label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label className="input-sublabel" htmlFor="guest-name-input">Full Name *</label>
+                        <span className="sck-char-limit-badge">{guestName.length}/60</span>
+                      </div>
                       <input
                         id="guest-name-input"
                         type="text"
                         className="form-input"
                         placeholder="e.g. Eleanor Vance"
+                        maxLength={60}
                         value={guestName}
                         onChange={(e) => setGuestName(e.target.value)}
                         required
                       />
                     </div>
                     <div>
-                      <label className="input-sublabel" htmlFor="guest-phone-input">Mobile Number (WhatsApp) *</label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label className="input-sublabel" htmlFor="guest-phone-input">Mobile Number (WhatsApp) *</label>
+                        <span className="sck-char-limit-badge">{guestPhone.length}/18</span>
+                      </div>
                       <input
                         id="guest-phone-input"
                         type="tel"
                         className="form-input"
                         placeholder="e.g. +1 (212) 555-0199"
+                        maxLength={18}
                         value={guestPhone}
                         onChange={(e) => setGuestPhone(e.target.value)}
                         required
@@ -803,11 +836,15 @@ export default function BookingPage({
                   </div>
 
                   <div style={{ marginTop: '14px' }}>
-                    <label className="input-sublabel" htmlFor="guest-notes-input">Special Requests / Hair Goals (Optional)</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label className="input-sublabel" htmlFor="guest-notes-input">Special Requests / Hair Goals (Optional)</label>
+                      <span className="sck-char-limit-badge">{guestNotes.length}/300</span>
+                    </div>
                     <textarea
                       id="guest-notes-input"
                       className="form-input"
                       rows={3}
+                      maxLength={300}
                       placeholder="Share existing color history, desired transformations, or stylist preferences..."
                       value={guestNotes}
                       onChange={(e) => setGuestNotes(e.target.value)}

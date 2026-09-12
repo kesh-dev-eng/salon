@@ -139,11 +139,15 @@ export default function ContactPage({ onBookClick }) {
                 ) : (
                   <form onSubmit={handleSubmit} className="sck-contact-form">
                     <div className="sck-form-field">
-                      <label htmlFor="contact-name">Your Full Name *</label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label htmlFor="contact-name">Your Full Name *</label>
+                        <span className="sck-char-limit-badge">{formData.name.length}/60</span>
+                      </div>
                       <input
                         id="contact-name"
                         type="text"
                         required
+                        maxLength={60}
                         placeholder="e.g. Eleanor Vance"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -152,21 +156,29 @@ export default function ContactPage({ onBookClick }) {
 
                     <div className="sck-form-row">
                       <div className="sck-form-field">
-                        <label htmlFor="contact-email">Email Address *</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label htmlFor="contact-email">Email Address *</label>
+                          <span className="sck-char-limit-badge">{formData.email.length}/80</span>
+                        </div>
                         <input
                           id="contact-email"
                           type="email"
                           required
+                          maxLength={80}
                           placeholder="you@domain.com"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         />
                       </div>
                       <div className="sck-form-field">
-                        <label htmlFor="contact-phone">Phone Number</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label htmlFor="contact-phone">Phone Number</label>
+                          <span className="sck-char-limit-badge">{formData.phone.length}/18</span>
+                        </div>
                         <input
                           id="contact-phone"
                           type="tel"
+                          maxLength={18}
                           placeholder="(212) 000-0000"
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -193,11 +205,15 @@ export default function ContactPage({ onBookClick }) {
                     </div>
 
                     <div className="sck-form-field">
-                      <label htmlFor="contact-msg">How Can We Help You? *</label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label htmlFor="contact-msg">How Can We Help You? *</label>
+                        <span className="sck-char-limit-badge">{formData.message.length}/500</span>
+                      </div>
                       <textarea
                         id="contact-msg"
                         rows="4"
                         required
+                        maxLength={500}
                         placeholder="Share details about your hair goals, preferred stylist, or question..."
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}

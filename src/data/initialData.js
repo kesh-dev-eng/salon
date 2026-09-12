@@ -293,6 +293,31 @@ export function formatPrice(price) {
   return str
 }
 
+export const INITIAL_TIMETABLE = {
+  workingDays: [
+    { day: 'Sun', name: 'Sunday', isOpen: false, openTime: '10:00 AM', closeTime: '05:00 PM' },
+    { day: 'Mon', name: 'Monday', isOpen: false, openTime: '09:00 AM', closeTime: '07:00 PM' },
+    { day: 'Tue', name: 'Tuesday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
+    { day: 'Wed', name: 'Wednesday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
+    { day: 'Thu', name: 'Thursday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
+    { day: 'Fri', name: 'Friday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
+    { day: 'Sat', name: 'Saturday', isOpen: true, openTime: '09:00 AM', closeTime: '06:00 PM' },
+  ],
+  timeSlots: [
+    { id: 't1', time: '09:30 AM', period: 'morning', label: 'Morning Light', badge: 'Available', active: true },
+    { id: 't2', time: '10:30 AM', period: 'morning', label: 'Morning High', badge: 'Popular', active: true },
+    { id: 't3', time: '11:30 AM', period: 'morning', label: 'Midday Prime', badge: 'Prime', active: true },
+    { id: 't4', time: '01:00 PM', period: 'afternoon', label: 'Early Afternoon', badge: 'Available', active: true },
+    { id: 't5', time: '02:15 PM', period: 'afternoon', label: 'Mid Afternoon', badge: 'Popular', active: true },
+    { id: 't6', time: '03:30 PM', period: 'afternoon', label: 'Late Afternoon', badge: 'Available', active: true },
+    { id: 't7', time: '04:30 PM', period: 'afternoon', label: 'Sunset Glow', badge: 'Prime', active: true },
+    { id: 't8', time: '05:30 PM', period: 'evening', label: 'Fifth Ave Twilight', badge: 'Available', active: true },
+    { id: 't9', time: '06:30 PM', period: 'evening', label: 'Evening Couture', badge: 'Peak Slot', active: true },
+    { id: 't10', time: '07:15 PM', period: 'evening', label: 'Late Salon Session', badge: 'VIP Evening', active: true },
+  ],
+  notice: 'Tue – Sat: 9:00 AM – 7:00 PM · Private 1-on-1 chair sessions'
+}
+
 export const STORAGE_KEY = 'salon_hub_store_v1'
 
 export function loadAtelierData() {
@@ -320,6 +345,7 @@ export function loadAtelierData() {
           ...b,
           servicePrice: formatPrice(b.servicePrice)
         })),
+        timetable: parsed.timetable || INITIAL_TIMETABLE,
       }
     }
   } catch (err) {
@@ -331,6 +357,7 @@ export function loadAtelierData() {
     gallery: INITIAL_GALLERY,
     reviews: INITIAL_REVIEWS,
     bookings: INITIAL_BOOKINGS.map((b) => ({ ...b, servicePrice: formatPrice(b.servicePrice) })),
+    timetable: INITIAL_TIMETABLE,
   }
 }
 
@@ -340,6 +367,7 @@ export function saveAtelierData(data) {
       ...data,
       services: data.services ? data.services.map((s) => ({ ...s, price: formatPrice(s.price) })) : data.services,
       bookings: data.bookings ? data.bookings.map((b) => ({ ...b, servicePrice: formatPrice(b.servicePrice) })) : data.bookings,
+      timetable: data.timetable || INITIAL_TIMETABLE,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized))
   } catch (err) {
@@ -359,5 +387,6 @@ export function resetAtelierData() {
     gallery: INITIAL_GALLERY,
     reviews: INITIAL_REVIEWS,
     bookings: INITIAL_BOOKINGS.map((b) => ({ ...b, servicePrice: formatPrice(b.servicePrice) })),
+    timetable: INITIAL_TIMETABLE,
   }
 }

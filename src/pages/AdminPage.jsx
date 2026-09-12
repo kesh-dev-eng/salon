@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { formatPrice } from '../data/initialData'
+import { formatPrice, INITIAL_TIMETABLE } from '../data/initialData'
 import {
   signInWithGoogle,
   signOutAdmin,
@@ -34,6 +34,8 @@ export default function AdminPage({
   setBookings,
   reviews = [],
   setReviews,
+  timetable = INITIAL_TIMETABLE,
+  setTimetable,
   onResetData,
   onNavigate
 }) {
@@ -203,8 +205,11 @@ export default function AdminPage({
   // Active navigation tab
   const [activeTab, setActiveTab] = useState('overview') // 'overview' | 'bookings' | 'services' | 'reviews' | 'admins' | 'system'
 
-  // Booking filters & search
+  // Booking filters, search & view mode
   const [bookingStatusFilter, setBookingStatusFilter] = useState('all')
+  const [bookingDateFilter, setBookingDateFilter] = useState('all') // 'all' | 'today' | 'tomorrow' | 'upcoming' | 'past' | 'custom'
+  const [bookingCustomDate, setBookingCustomDate] = useState('')
+  const [bookingViewMode, setBookingViewMode] = useState('table') // 'table' | 'agenda'
   const [bookingSearch, setBookingSearch] = useState('')
 
   // Service modal & state
@@ -267,6 +272,185 @@ export default function AdminPage({
     }
   }
 
+  // --- Customer Contact & Quick Connect helpers ---
+  const [copiedPhoneId, setCopiedPhoneId] = useState(null)
+
+  const handleCopyPhone = (bookingId, phone) => {
+    if (!phone) return
+    try {
+      navigator.clipboard?.writeText(phone)
+      setCopiedPhoneId(bookingId)
+      setTimeout(() => setCopiedPhoneId(null), 2000)
+    } catch {
+      // fallback
+    }
+  }
+
+  const formatCleanPhone = (phone) => {
+    if (!phone) return ''
+    return String(phone).replace(/[^\d+]/g, '')
+  }
+
+  const formatCleanWhatsApp = (phone) => {
+    if (!phone) return ''
+    return String(phone).replace(/[^\d]/g, '')
+  }
+
+  // --- Schedule & Timing Helpers for Clear Booking Visibility ---
+  const todayStr = useMemo(() => {
+    const d = new Date()
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }, [])
+
+  const tomorrowStr = useMemo(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const dd = String(d.getDate()).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}`
+  }, [])
+
+  const parseBookingSchedule = (dateStr, timeStr) => {
+    if (!dateStr) return { dayName: '', formattedDate: 'Date TBD', relativeBadge: null, isToday: false, isTomorrow: false, isPast: false }
+    const rawDate = String(dateStr).split('T')[0]
+    const parts = rawDate.split('-').map(Number)
+    const today = new Date()
+    const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
+    let dayName = ''
+    let formattedDate = rawDate
+    let relativeBadge = null
+    let isToday = false
+    let isTomorrow = false
+    let isPast = false
+
+    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+      const targetDate = new Date(parts[0], parts[1] - 1, parts[2])
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      dayName = days[targetDate.getDay()]
+      formattedDate = `${parts[2]} ${months[parts[1] - 1]} ${parts[0]}`
+
+      const diffMs = targetDate.getTime() - todayMid.getTime()
+      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
+
+      if (diffDays === 0) {
+        isToday = true
+        relativeBadge = { type: 'today', text: 'TODAY' }
+      } else if (diffDays === 1) {
+        isTomorrow = true
+        relativeBadge = { type: 'tomorrow', text: 'TOMORROW' }
+      } else if (diffDays < 0) {
+        isPast = true
+        relativeBadge = { type: 'past', text: `${Math.abs(diffDays)}d ago` }
+      } else if (diffDays <= 7) {
+        relativeBadge = { type: 'upcoming', text: `In ${diffDays}d` }
+      }
+    }
+
+    return {
+      rawDate,
+      dayName,
+      formattedDate,
+      relativeBadge,
+      isToday,
+      isTomorrow,
+      isPast
+    }
+  }
+
+  const parseTimeToMinutes = (timeStr) => {
+    if (!timeStr) return 9999
+    const m = String(timeStr).match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+    if (!m) return 9999
+    let h = parseInt(m[1], 10)
+    const min = parseInt(m[2], 10)
+    const ampm = m[3].toUpperCase()
+    if (ampm === 'PM' && h !== 12) h += 12
+    if (ampm === 'AM' && h === 12) h = 0
+    return h * 60 + min
+  }
+
+  // --- Timetable & Operating Hours helpers ---
+  const effectiveTimetable = timetable?.workingDays ? timetable : INITIAL_TIMETABLE
+
+  const handleToggleWorkingDay = (dayKey) => {
+    if (!setTimetable) return
+    const updatedDays = (effectiveTimetable.workingDays || []).map((d) => {
+      if (d.day === dayKey) {
+        return { ...d, isOpen: !d.isOpen }
+      }
+      return d
+    })
+    setTimetable({ ...effectiveTimetable, workingDays: updatedDays })
+    showToast('✓ Operating hours updated')
+  }
+
+  const handleUpdateDayHours = (dayKey, field, value) => {
+    if (!setTimetable) return
+    const updatedDays = (effectiveTimetable.workingDays || []).map((d) => {
+      if (d.day === dayKey) {
+        return { ...d, [field]: value }
+      }
+      return d
+    })
+    setTimetable({ ...effectiveTimetable, workingDays: updatedDays })
+  }
+
+  const handleToggleTimeSlot = (slotId) => {
+    if (!setTimetable) return
+    const updatedSlots = (effectiveTimetable.timeSlots || []).map((s) => {
+      if (s.id === slotId) {
+        return { ...s, active: s.active === false }
+      }
+      return s
+    })
+    setTimetable({ ...effectiveTimetable, timeSlots: updatedSlots })
+    showToast('✓ Time slot availability updated')
+  }
+
+  const handleDeleteTimeSlot = (slotId) => {
+    if (!setTimetable) return
+    const updatedSlots = (effectiveTimetable.timeSlots || []).filter((s) => s.id !== slotId)
+    setTimetable({ ...effectiveTimetable, timeSlots: updatedSlots })
+    showToast('✓ Time slot removed')
+  }
+
+  const [newSlotTime, setNewSlotTime] = useState('')
+  const [newSlotPeriod, setNewSlotPeriod] = useState('morning')
+  const [newSlotLabel, setNewSlotLabel] = useState('')
+  const [newSlotBadge, setNewSlotBadge] = useState('Available')
+
+  const handleAddSlot = (e) => {
+    e.preventDefault()
+    if (!newSlotTime.trim() || !setTimetable) return
+    const newSlot = {
+      id: 't-' + Date.now(),
+      time: newSlotTime.trim(),
+      period: newSlotPeriod,
+      label: newSlotLabel.trim() || 'Custom Slot',
+      badge: newSlotBadge.trim() || 'Available',
+      active: true
+    }
+    const updatedSlots = [...(effectiveTimetable.timeSlots || []), newSlot]
+    setTimetable({ ...effectiveTimetable, timeSlots: updatedSlots })
+    setNewSlotTime('')
+    setNewSlotLabel('')
+    setNewSlotBadge('Available')
+    showToast('✓ New time slot added')
+  }
+
+  const handleResetTimetable = () => {
+    if (window.confirm('Reset timetable and operating hours to factory default?')) {
+      if (setTimetable) setTimetable(INITIAL_TIMETABLE)
+      showToast('✓ Timetable reset to default')
+    }
+  }
+
   // --- Statistics & Overview calculations ---
   const stats = useMemo(() => {
     const totalBookings = bookings.length
@@ -294,26 +478,85 @@ export default function AdminPage({
     }
   }, [bookings, services, reviews])
 
-  // Filtered Bookings
+  // Date Counts for Fast Admin Overview (Today, Tomorrow, Upcoming)
+  const dateCounts = useMemo(() => {
+    let todayC = 0
+    let tomorrowC = 0
+    let upcomingC = 0
+    bookings.forEach((b) => {
+      const rawDate = (b.date || b.appointment_date || '').split('T')[0]
+      if (rawDate === todayStr) todayC++
+      if (rawDate === tomorrowStr) tomorrowC++
+      if (rawDate >= todayStr) upcomingC++
+    })
+    return { todayC, tomorrowC, upcomingC, total: bookings.length }
+  }, [bookings, todayStr, tomorrowStr])
+
+  // Filtered Bookings with Status, Date & Search
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
+      // 1. Status Filter
       const statusMatch =
         bookingStatusFilter === 'all'
           ? true
           : (b.status || '').toLowerCase() === bookingStatusFilter.toLowerCase()
+      if (!statusMatch) return false
 
+      // 2. Date Filter
+      const rawDate = (b.date || b.appointment_date || '').split('T')[0]
+      let dateMatch = true
+      if (bookingDateFilter === 'today') {
+        dateMatch = rawDate === todayStr
+      } else if (bookingDateFilter === 'tomorrow') {
+        dateMatch = rawDate === tomorrowStr
+      } else if (bookingDateFilter === 'upcoming') {
+        dateMatch = rawDate >= todayStr
+      } else if (bookingDateFilter === 'past') {
+        dateMatch = rawDate < todayStr
+      } else if (bookingDateFilter === 'custom' && bookingCustomDate) {
+        dateMatch = rawDate === bookingCustomDate
+      }
+      if (!dateMatch) return false
+
+      // 3. Search Query
       const q = bookingSearch.toLowerCase().trim()
-      if (!q) return statusMatch
+      if (!q) return true
 
       const nameMatch = (b.guestName || '').toLowerCase().includes(q)
       const serviceMatch = (b.serviceName || '').toLowerCase().includes(q)
       const phoneMatch = (b.guestPhone || '').toLowerCase().includes(q)
       const emailMatch = (b.guestEmail || '').toLowerCase().includes(q)
       const codeMatch = (b.code || '').toLowerCase().includes(q)
+      const dateMatchStr = rawDate.includes(q) || (b.time || '').toLowerCase().includes(q)
 
-      return statusMatch && (nameMatch || serviceMatch || phoneMatch || emailMatch || codeMatch)
+      return nameMatch || serviceMatch || phoneMatch || emailMatch || codeMatch || dateMatchStr
     })
-  }, [bookings, bookingStatusFilter, bookingSearch])
+  }, [bookings, bookingStatusFilter, bookingDateFilter, bookingCustomDate, bookingSearch, todayStr, tomorrowStr])
+
+  // Sorted Filtered Bookings (Chronological by Date then Time)
+  const sortedFilteredBookings = useMemo(() => {
+    return [...filteredBookings].sort((a, b) => {
+      const dateA = (a.date || a.appointment_date || '').split('T')[0]
+      const dateB = (b.date || b.appointment_date || '').split('T')[0]
+      if (dateA !== dateB) return dateA.localeCompare(dateB)
+      return parseTimeToMinutes(a.time || a.appointment_time) - parseTimeToMinutes(b.time || b.appointment_time)
+    })
+  }, [filteredBookings])
+
+  // Grouped by Date for Daily Schedule / Agenda View
+  const dateGroups = useMemo(() => {
+    const map = new Map()
+    sortedFilteredBookings.forEach((b) => {
+      const rawDate = (b.date || b.appointment_date || '').split('T')[0] || 'Unknown Date'
+      if (!map.has(rawDate)) map.set(rawDate, [])
+      map.get(rawDate).push(b)
+    })
+    return Array.from(map.entries()).map(([dateKey, items]) => ({
+      dateKey,
+      scheduleInfo: parseBookingSchedule(dateKey),
+      items
+    }))
+  }, [sortedFilteredBookings])
 
   // --- Booking Operations ---
   const handleUpdateBookingStatus = (bookingId, newStatus) => {
@@ -788,6 +1031,21 @@ export default function AdminPage({
 
             <button
               type="button"
+              className={`sck-sidebar-tab ${activeTab === 'timetable' ? 'is-active' : ''}`}
+              onClick={() => setActiveTab('timetable')}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>Timetable &amp; Hours</span>
+              <span className="sck-tab-badge">
+                {(effectiveTimetable?.timeSlots || []).filter((s) => s.active !== false).length}
+              </span>
+            </button>
+
+            <button
+              type="button"
               className={`sck-sidebar-tab ${activeTab === 'admins' ? 'is-active' : ''}`}
               onClick={() => setActiveTab('admins')}
             >
@@ -906,15 +1164,63 @@ export default function AdminPage({
                               <span className="sck-code-tag">{b.code || b.id.slice(0, 8)}</span>
                             </td>
                             <td>
-                              <strong>{b.guestName}</strong>
-                              {b.isQuietChair && <span className="sck-quiet-tag">Quiet Chair</span>}
+                              <div className="sck-guest-cell">
+                                <div className="sck-guest-name">
+                                  <strong>{b.guestName}</strong>
+                                  {b.isQuietChair && <span className="sck-quiet-tag">Quiet</span>}
+                                </div>
+                                {b.guestPhone && (
+                                  <div className="sck-quick-connect-row" style={{ marginTop: 4 }}>
+                                    <a
+                                      href={`tel:${formatCleanPhone(b.guestPhone)}`}
+                                      className="sck-contact-chip is-call"
+                                      title="Call customer"
+                                    >
+                                      📞 {b.guestPhone}
+                                    </a>
+                                    <a
+                                      href={`https://wa.me/${formatCleanWhatsApp(b.guestPhone)}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="sck-contact-chip is-wa"
+                                      title="Chat on WhatsApp"
+                                    >
+                                      WhatsApp
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             <td>{b.serviceName}</td>
                             <td>
                               <span className="sck-price-badge">{formatPrice(b.servicePrice)}</span>
                             </td>
                             <td>
-                              {b.date} at {b.time}
+                              {(() => {
+                                const sch = parseBookingSchedule(b.date, b.time)
+                                return (
+                                  <div className="sck-schedule-cell">
+                                    <div className="sck-schedule-time-row">
+                                      <span className="sck-schedule-time-badge">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                          <circle cx="12" cy="12" r="10"/>
+                                          <polyline points="12 6 12 12 16 14"/>
+                                        </svg>
+                                        <strong>{b.time || 'TBD'}</strong>
+                                      </span>
+                                      {sch.relativeBadge && (
+                                        <span className={`sck-relative-pill is-${sch.relativeBadge.type}`}>
+                                          {sch.relativeBadge.text}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="sck-schedule-date-row">
+                                      <strong className="sck-schedule-day-highlight">{sch.dayName ? sch.dayName.slice(0, 3) : ''},</strong>
+                                      <span>{sch.formattedDate}</span>
+                                    </div>
+                                  </div>
+                                )
+                              })()}
                             </td>
                             <td>
                               <span className={`sck-status-pill is-${(b.status || 'pending').toLowerCase()}`}>
@@ -950,7 +1256,7 @@ export default function AdminPage({
                 </button>
               </div>
 
-              {/* Filters Bar */}
+              {/* Status & Search Filter Bar */}
               <div className="sck-filter-controls-row">
                 <div className="sck-status-tabs">
                   {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map((st) => (
@@ -968,27 +1274,292 @@ export default function AdminPage({
                 <div className="sck-search-wrap">
                   <input
                     type="text"
-                    placeholder="Search by client, service, phone..."
+                    placeholder="Search client, service, phone, date..."
+                    maxLength={50}
                     value={bookingSearch}
                     onChange={(e) => setBookingSearch(e.target.value)}
                     className="sck-search-input"
                   />
+                  {bookingSearch && (
+                    <button
+                      type="button"
+                      className="sck-search-clear"
+                      onClick={() => setBookingSearch('')}
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Bookings Table */}
-              <div className="sck-admin-section-box">
-                {filteredBookings.length === 0 ? (
-                  <p className="sck-empty-text">No reservations match the selected filter.</p>
-                ) : (
+              {/* Date Filters & Schedule View Mode Bar */}
+              <div className="sck-date-controls-bar">
+                <div className="sck-date-filter-tabs">
+                  <button
+                    type="button"
+                    className={`sck-date-tab-btn ${bookingDateFilter === 'all' ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setBookingDateFilter('all')
+                      setBookingCustomDate('')
+                    }}
+                  >
+                    All Dates ({dateCounts.total})
+                  </button>
+                  <button
+                    type="button"
+                    className={`sck-date-tab-btn is-today-tab ${bookingDateFilter === 'today' ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setBookingDateFilter('today')
+                      setBookingCustomDate('')
+                    }}
+                  >
+                    <span className="sck-pulse-dot is-green" /> Today ({dateCounts.todayC})
+                  </button>
+                  <button
+                    type="button"
+                    className={`sck-date-tab-btn ${bookingDateFilter === 'tomorrow' ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setBookingDateFilter('tomorrow')
+                      setBookingCustomDate('')
+                    }}
+                  >
+                    Tomorrow ({dateCounts.tomorrowC})
+                  </button>
+                  <button
+                    type="button"
+                    className={`sck-date-tab-btn ${bookingDateFilter === 'upcoming' ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setBookingDateFilter('upcoming')
+                      setBookingCustomDate('')
+                    }}
+                  >
+                    Upcoming ({dateCounts.upcomingC})
+                  </button>
+
+                  <div className="sck-custom-date-wrap">
+                    <label className="sck-date-picker-label" htmlFor="sck-admin-date-picker">
+                      📅
+                    </label>
+                    <input
+                      id="sck-admin-date-picker"
+                      type="date"
+                      className="sck-custom-date-input"
+                      value={bookingCustomDate}
+                      onChange={(e) => {
+                        setBookingCustomDate(e.target.value)
+                        setBookingDateFilter(e.target.value ? 'custom' : 'all')
+                      }}
+                      title="Filter by specific appointment date"
+                    />
+                    {bookingCustomDate && (
+                      <button
+                        type="button"
+                        className="sck-clear-date-btn"
+                        onClick={() => {
+                          setBookingCustomDate('')
+                          setBookingDateFilter('all')
+                        }}
+                        title="Clear date selection"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* View Switcher: Table View vs Daily Schedule View */}
+                <div className="sck-view-mode-tabs">
+                  <button
+                    type="button"
+                    className={`sck-view-mode-btn ${bookingViewMode === 'table' ? 'is-active' : ''}`}
+                    onClick={() => setBookingViewMode('table')}
+                    title="Switch to Table View"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="8" y1="6" x2="21" y2="6"/>
+                      <line x1="8" y1="12" x2="21" y2="12"/>
+                      <line x1="8" y1="18" x2="21" y2="18"/>
+                      <line x1="3" y1="6" x2="3.01" y2="6"/>
+                      <line x1="3" y1="12" x2="3.01" y2="12"/>
+                      <line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                    <span>Table View</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`sck-view-mode-btn ${bookingViewMode === 'agenda' ? 'is-active' : ''}`}
+                    onClick={() => setBookingViewMode('agenda')}
+                    title="Switch to Daily Schedule View"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span>Daily Schedule</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Bookings View: Table or Daily Agenda */}
+              {sortedFilteredBookings.length === 0 ? (
+                <div className="sck-admin-section-box">
+                  <p className="sck-empty-text">No reservations match the selected date and status filters.</p>
+                </div>
+              ) : bookingViewMode === 'agenda' ? (
+                /* ================= DAILY SCHEDULE / AGENDA VIEW ================= */
+                <div className="sck-agenda-container">
+                  {dateGroups.map((grp) => (
+                    <div key={grp.dateKey} className="sck-agenda-group">
+                      <div className="sck-agenda-group-header">
+                        <div className="sck-agenda-group-title">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold, #ff9000)" strokeWidth="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                          </svg>
+                          <span className="sck-agenda-day-name">{grp.scheduleInfo.dayName || 'Date'},</span>
+                          <span className="sck-agenda-date-val">{grp.scheduleInfo.formattedDate}</span>
+                          {grp.scheduleInfo.relativeBadge && (
+                            <span className={`sck-relative-pill is-${grp.scheduleInfo.relativeBadge.type}`}>
+                              {grp.scheduleInfo.relativeBadge.text}
+                            </span>
+                          )}
+                        </div>
+                        <span className="sck-agenda-count-badge">
+                          {grp.items.length} {grp.items.length === 1 ? 'Booking' : 'Bookings'}
+                        </span>
+                      </div>
+
+                      <div className="sck-agenda-items-list">
+                        {grp.items.map((b) => (
+                          <div key={b.id} className="sck-agenda-card">
+                            {/* Prominent Time Section */}
+                            <div className="sck-agenda-time-box">
+                              <div className="sck-agenda-time-large">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                  <circle cx="12" cy="12" r="10"/>
+                                  <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                                <span>{b.time || 'TBD'}</span>
+                              </div>
+                              <span className={`sck-status-pill is-${(b.status || 'pending').toLowerCase()}`}>
+                                {b.status || 'Pending'}
+                              </span>
+                            </div>
+
+                            {/* Guest & Contact Info */}
+                            <div className="sck-agenda-client-box">
+                              <div className="sck-agenda-client-top">
+                                <strong className="sck-agenda-client-name">{b.guestName}</strong>
+                                {b.isQuietChair && <span className="sck-quiet-tag">Quiet Chair</span>}
+                                <span className="sck-code-tag">{b.code || b.id.slice(0, 8)}</span>
+                              </div>
+
+                              {b.guestPhone ? (
+                                <div className="sck-quick-connect-row" style={{ marginTop: 6 }}>
+                                  <span className="sck-phone-num">{b.guestPhone}</span>
+                                  <a
+                                    href={`tel:${formatCleanPhone(b.guestPhone)}`}
+                                    className="sck-contact-chip is-call"
+                                    title={`Call ${b.guestName}`}
+                                  >
+                                    📞 Call
+                                  </a>
+                                  <a
+                                    href={`https://wa.me/${formatCleanWhatsApp(b.guestPhone)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="sck-contact-chip is-wa"
+                                    title={`WhatsApp ${b.guestName}`}
+                                  >
+                                    💬 WhatsApp
+                                  </a>
+                                  <button
+                                    type="button"
+                                    className="sck-contact-chip is-copy"
+                                    onClick={() => handleCopyPhone(b.id, b.guestPhone)}
+                                    title="Copy Phone Number"
+                                  >
+                                    {copiedPhoneId === b.id ? '✓ Copied' : 'Copy'}
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="sck-guest-sub">No phone provided</div>
+                              )}
+
+                              {b.notes && (
+                                <div className="sck-agenda-notes">
+                                  <em>&ldquo;{b.notes}&rdquo;</em>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Treatment & Stylist */}
+                            <div className="sck-agenda-treatment-box">
+                              <strong className="sck-agenda-treatment-name">{b.serviceName}</strong>
+                              <div className="sck-agenda-treatment-sub">
+                                <span>{b.stylist || 'Fifth Ave Stylist'}</span>
+                                <span className="sck-price-badge">{formatPrice(b.servicePrice)}</span>
+                              </div>
+                            </div>
+
+                            {/* Status Actions */}
+                            <div className="sck-agenda-actions-box">
+                              <div className="sck-status-action-btns">
+                                <button
+                                  type="button"
+                                  className="sck-act-btn is-confirm"
+                                  onClick={() => handleUpdateBookingStatus(b.id, 'Confirmed')}
+                                  title="Mark Confirmed"
+                                >
+                                  Confirm
+                                </button>
+                                <button
+                                  type="button"
+                                  className="sck-act-btn is-complete"
+                                  onClick={() => handleUpdateBookingStatus(b.id, 'Completed')}
+                                  title="Mark Completed"
+                                >
+                                  Complete
+                                </button>
+                                <button
+                                  type="button"
+                                  className="sck-act-btn is-cancel"
+                                  onClick={() => handleUpdateBookingStatus(b.id, 'Cancelled')}
+                                  title="Mark Cancelled"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                className="sck-del-btn"
+                                onClick={() => handleDeleteBooking(b.id)}
+                                title="Delete record"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* ================= TABLE VIEW ================= */
+                <div className="sck-admin-section-box">
                   <div className="sck-table-responsive">
                     <table className="sck-admin-table">
                       <thead>
                         <tr>
                           <th>Ref</th>
-                          <th>Guest Details</th>
+                          <th>Guest &amp; Contact</th>
                           <th>Treatment &amp; Stylist</th>
-                          <th>Schedule</th>
+                          <th>When &amp; Time</th>
                           <th>Amount</th>
                           <th>Status</th>
                           <th>Change Status</th>
@@ -996,7 +1567,7 @@ export default function AdminPage({
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredBookings.map((b) => (
+                        {sortedFilteredBookings.map((b) => (
                           <tr key={b.id}>
                             <td>
                               <span className="sck-code-tag">{b.code || b.id.slice(0, 8)}</span>
@@ -1004,11 +1575,49 @@ export default function AdminPage({
                             <td>
                               <div className="sck-guest-cell">
                                 <div className="sck-guest-name">
-                                  {b.guestName}
+                                  <strong>{b.guestName}</strong>
                                   {b.isQuietChair && <span className="sck-quiet-tag">Quiet</span>}
                                 </div>
-                                <div className="sck-guest-sub">{b.guestPhone}</div>
-                                {b.guestEmail && <div className="sck-guest-sub">{b.guestEmail}</div>}
+                                {b.guestPhone ? (
+                                  <div className="sck-customer-contact-box">
+                                    <span className="sck-phone-num">{b.guestPhone}</span>
+                                    <div className="sck-quick-connect-row">
+                                      <a
+                                        href={`tel:${formatCleanPhone(b.guestPhone)}`}
+                                        className="sck-contact-chip is-call"
+                                        title={`Call ${b.guestName}`}
+                                      >
+                                        📞 Call
+                                      </a>
+                                      <a
+                                        href={`https://wa.me/${formatCleanWhatsApp(b.guestPhone)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="sck-contact-chip is-wa"
+                                        title={`WhatsApp ${b.guestName}`}
+                                      >
+                                        💬 WhatsApp
+                                      </a>
+                                      <button
+                                        type="button"
+                                        className="sck-contact-chip is-copy"
+                                        onClick={() => handleCopyPhone(b.id, b.guestPhone)}
+                                        title="Copy phone number"
+                                      >
+                                        {copiedPhoneId === b.id ? '✓ Copied' : 'Copy'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="sck-guest-sub">No phone provided</div>
+                                )}
+                                {b.guestEmail && (
+                                  <div className="sck-guest-sub" style={{ marginTop: 2 }}>
+                                    <a href={`mailto:${b.guestEmail}`} style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>
+                                      ✉ {b.guestEmail}
+                                    </a>
+                                  </div>
+                                )}
                               </div>
                             </td>
                             <td>
@@ -1016,8 +1625,31 @@ export default function AdminPage({
                               <div className="sck-guest-sub">{b.stylist || 'Fifth Ave Artist'}</div>
                             </td>
                             <td>
-                              <div><strong>{b.date}</strong></div>
-                              <div className="sck-guest-sub">{b.time}</div>
+                              {(() => {
+                                const sch = parseBookingSchedule(b.date, b.time)
+                                return (
+                                  <div className="sck-schedule-cell">
+                                    <div className="sck-schedule-time-row">
+                                      <span className="sck-schedule-time-badge">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                          <circle cx="12" cy="12" r="10"/>
+                                          <polyline points="12 6 12 12 16 14"/>
+                                        </svg>
+                                        <strong>{b.time || 'TBD'}</strong>
+                                      </span>
+                                      {sch.relativeBadge && (
+                                        <span className={`sck-relative-pill is-${sch.relativeBadge.type}`}>
+                                          {sch.relativeBadge.text}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="sck-schedule-date-row">
+                                      <strong className="sck-schedule-day-highlight">{sch.dayName ? sch.dayName.slice(0, 3) : ''},</strong>
+                                      <span>{sch.formattedDate}</span>
+                                    </div>
+                                  </div>
+                                )
+                              })()}
                             </td>
                             <td>
                               <span className="sck-price-badge">{formatPrice(b.servicePrice)}</span>
@@ -1070,8 +1702,8 @@ export default function AdminPage({
                       </tbody>
                     </table>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1263,21 +1895,21 @@ export default function AdminPage({
                 </div>
 
                 <div className="sck-table-responsive" style={{ marginTop: 14 }}>
-                  <table className="sck-bookings-table">
+                  <table className="sck-admin-table sck-accounts-table">
                     <thead>
                       <tr>
-                        <th>Google Account</th>
-                        <th>Assigned Name</th>
-                        <th>Role</th>
-                        <th>Status</th>
-                        <th>Added Date</th>
-                        <th style={{ textAlign: 'right' }}>Actions</th>
+                        <th style={{ width: '32%' }}>Google Account</th>
+                        <th style={{ width: '22%' }}>Assigned Name</th>
+                        <th style={{ width: '15%' }}>Role</th>
+                        <th style={{ width: '13%' }}>Status</th>
+                        <th style={{ width: '10%', whiteSpace: 'nowrap' }}>Added Date</th>
+                        <th style={{ width: '8%', textAlign: 'right' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {authorizedAdminsList.length === 0 ? (
                         <tr>
-                          <td colSpan="6" style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.4)' }}>
+                          <td colSpan="6" style={{ textAlign: 'center', padding: 28, color: 'rgba(255,255,255,0.4)' }}>
                             No authorized accounts loaded.
                           </td>
                         </tr>
@@ -1290,44 +1922,53 @@ export default function AdminPage({
                           return (
                             <tr key={adm.id || adm.email}>
                               <td>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <strong style={{ color: '#ffffff' }}>{adm.email}</strong>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                                  <span style={{ color: '#ffffff', fontWeight: 600, fontSize: '13px' }}>
+                                    {adm.email}
+                                  </span>
                                   {isCurrent && (
-                                    <span className="sck-current-badge">Current User</span>
+                                    <span className="sck-current-badge">
+                                      Current User
+                                    </span>
                                   )}
                                 </div>
                               </td>
-                              <td>{adm.name || '—'}</td>
+                              <td style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
+                                {adm.name || '—'}
+                              </td>
                               <td>
-                                <span className={`sck-status-pill is-${adm.role === 'super_admin' ? 'confirmed' : 'pending'}`}>
+                                <span className={`sck-role-pill is-${adm.role || 'admin'}`}>
                                   {(adm.role || 'admin').replace('_', ' ').toUpperCase()}
                                 </span>
                               </td>
                               <td>
                                 <button
                                   type="button"
-                                  className={`sck-status-pill is-${adm.is_active !== false ? 'confirmed' : 'cancelled'}`}
+                                  className={`sck-status-toggle-btn ${adm.is_active !== false ? 'is-active' : 'is-disabled'}`}
                                   onClick={() => handleToggleAdminStatus(adm.id, adm.is_active !== false)}
                                   title="Click to toggle active status"
                                 >
-                                  {adm.is_active !== false ? 'Active' : 'Disabled'}
+                                  <span className="sck-status-dot" />
+                                  <span>{adm.is_active !== false ? 'Active' : 'Disabled'}</span>
                                 </button>
                               </td>
-                              <td>
+                              <td style={{ color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap', fontSize: '12px' }}>
                                 {adm.created_at
                                   ? new Date(adm.created_at).toLocaleDateString()
                                   : 'Default'}
                               </td>
                               <td style={{ textAlign: 'right' }}>
-                                {!isCurrent && (
+                                {!isCurrent ? (
                                   <button
                                     type="button"
-                                    className="sck-del-srv-btn"
+                                    className="sck-revoke-btn"
                                     onClick={() => handleRemoveAdmin(adm.id, adm.email)}
                                     title="Revoke access"
                                   >
                                     Revoke
                                   </button>
+                                ) : (
+                                  <span className="sck-locked-badge">Protected</span>
                                 )}
                               </td>
                             </tr>
@@ -1336,6 +1977,203 @@ export default function AdminPage({
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* TAB: TIMETABLE & WORKING HOURS */}
+          {/* ========================================================= */}
+          {activeTab === 'timetable' && (
+            <div className="sck-tab-pane">
+              <div className="sck-pane-header">
+                <div>
+                  <h2 className="sck-pane-title">Salon Timetable &amp; Operating Hours</h2>
+                  <p className="sck-pane-subtitle">
+                    Configure weekly operating days, hours, and available reservation slots. Changes automatically synchronize with client booking availability.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    type="button"
+                    className="sck-btn-secondary"
+                    onClick={handleResetTimetable}
+                  >
+                    ↺ Reset Standard Hours
+                  </button>
+                </div>
+              </div>
+
+              {/* Weekly Operating Schedule */}
+              <div className="sck-admin-section-box">
+                <div className="sck-box-header">
+                  <div>
+                    <h3 className="sck-box-title">Weekly Operating Schedule</h3>
+                    <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>
+                      Days marked &quot;Closed&quot; will be automatically blocked in the client reservation calendar.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="sck-schedule-grid">
+                  {(effectiveTimetable.workingDays || []).map((dayObj) => (
+                    <div
+                      key={dayObj.day}
+                      className={`sck-day-card ${dayObj.isOpen ? 'is-open' : 'is-closed'}`}
+                    >
+                      <div className="sck-day-header">
+                        <div className="sck-day-name-box">
+                          <span className="sck-day-short">{dayObj.day}</span>
+                          <span className="sck-day-full">{dayObj.name}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className={`sck-status-toggle-btn ${dayObj.isOpen ? 'is-active' : 'is-disabled'}`}
+                          onClick={() => handleToggleWorkingDay(dayObj.day)}
+                          title={`Click to mark ${dayObj.name} as ${dayObj.isOpen ? 'Closed' : 'Open'}`}
+                        >
+                          <span className="sck-status-dot" />
+                          <span>{dayObj.isOpen ? 'Open' : 'Closed'}</span>
+                        </button>
+                      </div>
+
+                      {dayObj.isOpen ? (
+                        <div className="sck-day-hours">
+                          <div className="sck-hour-field">
+                            <label>Opens</label>
+                            <input
+                              type="text"
+                              value={dayObj.openTime || '09:00 AM'}
+                              maxLength={12}
+                              onChange={(e) => handleUpdateDayHours(dayObj.day, 'openTime', e.target.value)}
+                            />
+                          </div>
+                          <span className="sck-hour-sep">–</span>
+                          <div className="sck-hour-field">
+                            <label>Closes</label>
+                            <input
+                              type="text"
+                              value={dayObj.closeTime || '07:00 PM'}
+                              maxLength={12}
+                              onChange={(e) => handleUpdateDayHours(dayObj.day, 'closeTime', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="sck-day-closed-note">
+                          <span>Closed for appointments</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bookable Time Slots */}
+              <div className="sck-admin-section-box">
+                <div className="sck-box-header">
+                  <div>
+                    <h3 className="sck-box-title">
+                      Active Reservation Time Slots ({(effectiveTimetable.timeSlots || []).filter(s => s.active !== false).length})
+                    </h3>
+                    <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>
+                      Clients can choose from these active slots when scheduling an appointment on the booking page.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="sck-slots-grid">
+                  {(effectiveTimetable.timeSlots || []).map((slot) => (
+                    <div
+                      key={slot.id}
+                      className={`sck-slot-admin-card ${slot.active !== false ? 'is-active' : 'is-inactive'}`}
+                    >
+                      <div className="sck-slot-top">
+                        <span className="sck-slot-time">{slot.time}</span>
+                        <span className={`sck-slot-period is-${slot.period || 'morning'}`}>
+                          {(slot.period || 'morning').toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="sck-slot-meta">
+                        <span className="sck-slot-label">{slot.label || 'Standard Slot'}</span>
+                        <span className="sck-slot-badge">{slot.badge || 'Available'}</span>
+                      </div>
+                      <div className="sck-slot-actions">
+                        <button
+                          type="button"
+                          className={`sck-slot-toggle ${slot.active !== false ? 'is-enabled' : 'is-disabled'}`}
+                          onClick={() => handleToggleTimeSlot(slot.id)}
+                        >
+                          {slot.active !== false ? 'Active' : 'Disabled'}
+                        </button>
+                        <button
+                          type="button"
+                          className="sck-del-btn"
+                          onClick={() => handleDeleteTimeSlot(slot.id)}
+                          title="Remove time slot"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Time Slot Form */}
+                <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                  <h4 style={{ color: '#ffffff', fontSize: 14, margin: '0 0 12px' }}>+ Add Custom Time Slot</h4>
+                  <form onSubmit={handleAddSlot} className="sck-modal-form">
+                    <div className="sck-form-grid-4">
+                      <div className="sck-form-row">
+                        <label>Slot Time *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. 08:30 AM"
+                          maxLength={15}
+                          value={newSlotTime}
+                          onChange={(e) => setNewSlotTime(e.target.value)}
+                        />
+                      </div>
+                      <div className="sck-form-row">
+                        <label>Day Period</label>
+                        <select
+                          value={newSlotPeriod}
+                          onChange={(e) => setNewSlotPeriod(e.target.value)}
+                        >
+                          <option value="morning">Morning</option>
+                          <option value="afternoon">Afternoon</option>
+                          <option value="evening">Evening</option>
+                        </select>
+                      </div>
+                      <div className="sck-form-row">
+                        <label>Custom Label</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Early Sunrise"
+                          maxLength={30}
+                          value={newSlotLabel}
+                          onChange={(e) => setNewSlotLabel(e.target.value)}
+                        />
+                      </div>
+                      <div className="sck-form-row">
+                        <label>Tag Badge</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Prime, Popular"
+                          maxLength={20}
+                          value={newSlotBadge}
+                          onChange={(e) => setNewSlotBadge(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <button type="submit" className="sck-btn-teal">
+                        Add Time Slot
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>
@@ -1460,6 +2298,7 @@ export default function AdminPage({
                   type="text"
                   required
                   placeholder="e.g. Eleanor Vance"
+                  maxLength={60}
                   value={newGuestName}
                   onChange={(e) => setNewGuestName(e.target.value)}
                 />
@@ -1471,6 +2310,7 @@ export default function AdminPage({
                   <input
                     type="text"
                     placeholder="+1 (212) 555-0199"
+                    maxLength={18}
                     value={newGuestPhone}
                     onChange={(e) => setNewGuestPhone(e.target.value)}
                   />
@@ -1480,6 +2320,7 @@ export default function AdminPage({
                   <input
                     type="email"
                     placeholder="guest@domain.com"
+                    maxLength={80}
                     value={newGuestEmail}
                     onChange={(e) => setNewGuestEmail(e.target.value)}
                   />
@@ -1612,6 +2453,7 @@ export default function AdminPage({
                   type="text"
                   required
                   placeholder="e.g. Japanese Scalp Head Spa"
+                  maxLength={80}
                   value={newServiceName}
                   onChange={(e) => setNewServiceName(e.target.value)}
                 />
@@ -1640,6 +2482,7 @@ export default function AdminPage({
                     type="text"
                     required
                     placeholder="e.g. Rs 180+"
+                    maxLength={20}
                     value={newServicePrice}
                     onChange={(e) => setNewServicePrice(e.target.value)}
                   />
@@ -1652,6 +2495,7 @@ export default function AdminPage({
                   <input
                     type="text"
                     placeholder="e.g. 60 min"
+                    maxLength={20}
                     value={newServiceDuration}
                     onChange={(e) => setNewServiceDuration(e.target.value)}
                   />
@@ -1678,6 +2522,7 @@ export default function AdminPage({
                 <label>Description</label>
                 <textarea
                   rows={3}
+                  maxLength={300}
                   placeholder="Detail the consultation, formulation, and finish of this service..."
                   value={newServiceDesc}
                   onChange={(e) => setNewServiceDesc(e.target.value)}
@@ -1724,7 +2569,8 @@ export default function AdminPage({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Vivienne Montgomery"
+                  placeholder="e.g. Carolyn Pianin"
+                  maxLength={50}
                   value={newReviewAuthor}
                   onChange={(e) => setNewReviewAuthor(e.target.value)}
                 />
@@ -1736,6 +2582,7 @@ export default function AdminPage({
                   <input
                     type="text"
                     placeholder="e.g. Fifth Avenue Patron"
+                    maxLength={50}
                     value={newReviewRole}
                     onChange={(e) => setNewReviewRole(e.target.value)}
                   />
@@ -1759,6 +2606,7 @@ export default function AdminPage({
                 <textarea
                   rows={3}
                   required
+                  maxLength={400}
                   placeholder="Share the client's words on their hair transformation..."
                   value={newReviewText}
                   onChange={(e) => setNewReviewText(e.target.value)}

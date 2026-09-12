@@ -92,6 +92,7 @@ export default function ServicesPage({
             <input
               type="text"
               placeholder="Search services..."
+              maxLength={50}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="sck-search-input"

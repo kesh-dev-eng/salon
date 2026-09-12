@@ -89,11 +89,15 @@ export default function CareersPage() {
             ) : (
               <form onSubmit={handleSubmit} className="sck-contact-form">
                 <div className="sck-form-field">
-                  <label htmlFor="applicant-name">Full Name *</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label htmlFor="applicant-name">Full Name *</label>
+                    <span className="sck-char-limit-badge">{careerForm.name.length}/60</span>
+                  </div>
                   <input
                     id="applicant-name"
                     type="text"
                     required
+                    maxLength={60}
                     placeholder="Your Name"
                     value={careerForm.name}
                     onChange={(e) => setCareerForm({ ...careerForm, name: e.target.value })}
@@ -101,22 +105,30 @@ export default function CareersPage() {
                 </div>
                 <div className="sck-form-row">
                   <div className="sck-form-field">
-                    <label htmlFor="applicant-email">Email Address *</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label htmlFor="applicant-email">Email Address *</label>
+                      <span className="sck-char-limit-badge">{careerForm.email.length}/80</span>
+                    </div>
                     <input
                       id="applicant-email"
                       type="email"
                       required
+                      maxLength={80}
                       placeholder="you@domain.com"
                       value={careerForm.email}
                       onChange={(e) => setCareerForm({ ...careerForm, email: e.target.value })}
                     />
                   </div>
                   <div className="sck-form-field">
-                    <label htmlFor="applicant-phone">Phone Number *</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label htmlFor="applicant-phone">Phone Number *</label>
+                      <span className="sck-char-limit-badge">{careerForm.phone.length}/18</span>
+                    </div>
                     <input
                       id="applicant-phone"
                       type="tel"
                       required
+                      maxLength={18}
                       placeholder="(212) 000-0000"
                       value={careerForm.phone}
                       onChange={(e) => setCareerForm({ ...careerForm, phone: e.target.value })}
@@ -139,10 +151,14 @@ export default function CareersPage() {
                     </select>
                   </div>
                   <div className="sck-form-field">
-                    <label htmlFor="applicant-ig">Instagram / Portfolio URL</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label htmlFor="applicant-ig">Instagram / Portfolio URL</label>
+                      <span className="sck-char-limit-badge">{careerForm.instagram.length}/120</span>
+                    </div>
                     <input
                       id="applicant-ig"
                       type="text"
+                      maxLength={120}
                       placeholder="@yourhandle or URL"
                       value={careerForm.instagram}
                       onChange={(e) => setCareerForm({ ...careerForm, instagram: e.target.value })}
@@ -151,10 +167,14 @@ export default function CareersPage() {
                 </div>
 
                 <div className="sck-form-field">
-                  <label htmlFor="applicant-msg">Experience &amp; Background</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label htmlFor="applicant-msg">Experience &amp; Background</label>
+                    <span className="sck-char-limit-badge">{careerForm.message.length}/600</span>
+                  </div>
                   <textarea
                     id="applicant-msg"
                     rows="3"
+                    maxLength={600}
                     placeholder="Brief summary of your cosmetology background, years in salon, and career goals..."
                     value={careerForm.message}
                     onChange={(e) => setCareerForm({ ...careerForm, message: e.target.value })}

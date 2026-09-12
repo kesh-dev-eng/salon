@@ -14,6 +14,7 @@ import CareersPage from './pages/CareersPage'
 import BookingPage from './pages/BookingPage'
 import AdminPage from './pages/AdminPage'
 import Loader from './components/Loader'
+import { fetchTimetableFromSupabase, syncTimetableToSupabase } from './supabase'
 import './App.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -102,9 +103,9 @@ export default function App() {
   const root = useRef(null)
   const canvasRef = useRef(null)
 
-  // Local Atelier State (Services, Gallery, Reviews, Bookings)
+  // Local Atelier State (Services, Gallery, Reviews, Bookings, Timetable)
   const [atelierState, setAtelierState] = useState(() => loadAtelierData())
-  const { services = [], reviews = [], bookings = [] } = atelierState
+  const { services = [], reviews = [], bookings = [], timetable = {} } = atelierState
 
   const setServices = (newServices) => {
     setAtelierState((prev) => {
@@ -113,6 +114,28 @@ export default function App() {
       return updated
     })
   }
+
+  const setTimetable = (newTimetable) => {
+    setAtelierState((prev) => {
+      const updated = { ...prev, timetable: typeof newTimetable === 'function' ? newTimetable(prev.timetable) : newTimetable }
+      saveAtelierData(updated)
+      syncTimetableToSupabase(updated.timetable)
+      return updated
+    })
+  }
+
+  // Load cloud timetable on mount if available in Supabase
+  useEffect(() => {
+    fetchTimetableFromSupabase().then((cloudTimetable) => {
+      if (cloudTimetable?.workingDays && Array.isArray(cloudTimetable.workingDays) && cloudTimetable.workingDays.length > 0) {
+        setAtelierState((prev) => {
+          const updated = { ...prev, timetable: cloudTimetable }
+          saveAtelierData(updated)
+          return updated
+        })
+      }
+    })
+  }, [])
 
   const setReviews = (newReviews) => {
     setAtelierState((prev) => {
@@ -1211,6 +1234,7 @@ export default function App() {
           <BookingPage
             services={services}
             bookings={bookings}
+            timetable={timetable}
             preselectedService={bookingPreselectedService}
             onBookSuccess={(newBooking) => {
               setBookings((prev) => [newBooking, ...prev])
@@ -1227,6 +1251,8 @@ export default function App() {
             setBookings={setBookings}
             reviews={reviews}
             setReviews={setReviews}
+            timetable={timetable}
+            setTimetable={setTimetable}
             onResetData={handleResetData}
             onNavigate={navigateTo}
           />
@@ -1425,11 +1451,15 @@ export default function App() {
 
                 {/* Author Name */}
                 <div className="sck-form-group">
-                  <label className="sck-form-label">3. Your Full Name</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label className="sck-form-label">3. Your Full Name</label>
+                    <span className="sck-char-limit-badge">{reviewAuthor.length}/50</span>
+                  </div>
                   <input
                     type="text"
                     className="sck-form-input"
                     placeholder="e.g. Carolyn Pianin"
+                    maxLength={50}
                     value={reviewAuthor}
                     onChange={(e) => setReviewAuthor(e.target.value)}
                     required
@@ -1438,10 +1468,14 @@ export default function App() {
 
                 {/* Comment Textarea */}
                 <div className="sck-form-group">
-                  <label className="sck-form-label">4. Your Comments / Review</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label className="sck-form-label">4. Your Comments / Review</label>
+                    <span className="sck-char-limit-badge">{reviewComment.length}/400</span>
+                  </div>
                   <textarea
                     className="sck-form-textarea"
                     rows="4"
+                    maxLength={400}
                     placeholder="Describe your session with our Fifth Avenue stylists, your haircut, balayage, or overall salon experience..."
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}

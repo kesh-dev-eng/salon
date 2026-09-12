@@ -68,6 +68,7 @@ export default function BlogPage({ onBookClick }) {
             <input
               type="text"
               placeholder="Search articles & press..."
+              maxLength={50}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="sck-search-input"
