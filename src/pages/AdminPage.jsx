@@ -27,7 +27,15 @@ import {
   normalizeTimeStr,
   fetchAdminBookingsFromSupabase
 } from '../supabase'
-import { generateUniqueBookingCode, parseBookingCode } from '../utils/bookingCode.js'
+import {
+  generateUniqueBookingCode,
+  parseBookingCode,
+  getOrGenerateBookingCode,
+  mergeBookingRecords,
+  formatFriendlySchedule,
+  formatFriendlyDate,
+  calculateEndTime
+} from '../utils/bookingCode.js'
 
 export default function AdminPage({
   services = [],
@@ -91,10 +99,23 @@ export default function AdminPage({
         fetchAdminBookingsFromSupabase().then((cloudBookings) => {
           if (cloudBookings && cloudBookings.length > 0 && setBookings) {
             setBookings((prev) => {
+              const localMap = new Map()
+              ;(prev || []).forEach((b) => {
+                if (b.id) localMap.set(b.id, b)
+                if (b.code) localMap.set(b.code, b)
+              })
               const map = new Map()
-              cloudBookings.forEach((b) => map.set(b.id || b.code, b))
-              prev.forEach((b) => {
-                if (!map.has(b.id || b.code)) map.set(b.id || b.code, b)
+              cloudBookings.forEach((cloudB) => {
+                const key = cloudB.id || cloudB.code
+                const localB = localMap.get(cloudB.id) || localMap.get(cloudB.code)
+                const merged = mergeBookingRecords(cloudB, localB)
+                map.set(merged.id || key, merged)
+              })
+              ;(prev || []).forEach((b) => {
+                const key = b.id || b.code
+                if (!map.has(b.id) && !map.has(b.code)) {
+                  map.set(key, b)
+                }
               })
               return Array.from(map.values())
             })
@@ -240,6 +261,7 @@ export default function AdminPage({
   const [newGuestName, setNewGuestName] = useState('')
   const [newGuestPhone, setNewGuestPhone] = useState('')
   const [newGuestEmail, setNewGuestEmail] = useState('')
+  const [newGuestNotes, setNewGuestNotes] = useState('')
   const [newBookingService, setNewBookingService] = useState(services[0]?.name || 'Cut & Styling')
   const [newBookingDate, setNewBookingDate] = useState(() => new Date().toISOString().split('T')[0])
   const [newBookingTime, setNewBookingTime] = useState('11:30 AM')
@@ -298,10 +320,23 @@ export default function AdminPage({
       const cloud = await fetchAdminBookingsFromSupabase()
       if (cloud && cloud.length > 0 && setBookings) {
         setBookings((prev) => {
-          const map = new Map()
-          cloud.forEach((b) => map.set(b.id || b.code, b))
+          const localMap = new Map()
           ;(prev || []).forEach((b) => {
-            if (!map.has(b.id || b.code)) map.set(b.id || b.code, b)
+            if (b.id) localMap.set(b.id, b)
+            if (b.code) localMap.set(b.code, b)
+          })
+          const map = new Map()
+          cloud.forEach((cloudB) => {
+            const key = cloudB.id || cloudB.code
+            const localB = localMap.get(cloudB.id) || localMap.get(cloudB.code)
+            const merged = mergeBookingRecords(cloudB, localB)
+            map.set(merged.id || key, merged)
+          })
+          ;(prev || []).forEach((b) => {
+            const key = b.id || b.code
+            if (!map.has(b.id) && !map.has(b.code)) {
+              map.set(key, b)
+            }
           })
           return Array.from(map.values())
         })
@@ -654,20 +689,33 @@ export default function AdminPage({
     }
 
     const matchedService = services.find((s) => s.name === newBookingService)
+    const newId = `bk-${Date.now()}`
+    const newCode = generateUniqueBookingCode(newGuestName, newGuestPhone, newGuestEmail, bookings, newId)
     const newEntry = {
-      id: `bk-${Date.now()}`,
-      code: generateUniqueBookingCode(newGuestName, newGuestPhone, newGuestEmail, bookings),
+      id: newId,
+      code: newCode,
+      client_name: newGuestName.trim(),
       guestName: newGuestName.trim(),
+      client_phone: newGuestPhone.trim() || 'In-Salon Walk-in',
       guestPhone: newGuestPhone.trim() || 'In-Salon Walk-in',
+      client_email: newGuestEmail.trim() || 'reception@salonhub.com',
       guestEmail: newGuestEmail.trim() || 'reception@salonhub.com',
+      notes: newGuestNotes.trim(),
+      guestNotes: newGuestNotes.trim(),
       serviceName: newBookingService,
+      service_name: newBookingService,
       servicePrice: formatPrice(matchedService?.price || 'Rs 150+'),
+      service_price: formatPrice(matchedService?.price || 'Rs 150+'),
       stylist: 'Fifth Avenue Master Stylist',
       date: newBookingDate,
+      appointment_date: newBookingDate,
       time: newBookingTime,
+      appointment_time: newBookingTime,
       isQuietChair: newBookingQuiet,
+      quiet_chair: newBookingQuiet,
       status: 'Confirmed',
-      createdAt: new Date().toISOString().split('T')[0]
+      createdAt: new Date().toISOString().split('T')[0],
+      created_at: new Date().toISOString()
     }
 
     setBookings((prev) => [newEntry, ...prev])
@@ -675,6 +723,7 @@ export default function AdminPage({
     setNewGuestName('')
     setNewGuestPhone('')
     setNewGuestEmail('')
+    setNewGuestNotes('')
     showToast(`Reservation created for ${newEntry.guestName}`)
 
     // Sync to Supabase with conflict notification
@@ -1221,7 +1270,7 @@ export default function AdminPage({
                         {bookings.slice(0, 5).map((b) => (
                           <tr key={b.id}>
                             <td>
-                              <span className="sck-code-tag">{b.code || b.id.slice(0, 8)}</span>
+                              <span className="sck-code-tag">{b.code || getOrGenerateBookingCode(b)}</span>
                             </td>
                             <td>
                               <div className="sck-guest-cell">
@@ -1229,6 +1278,27 @@ export default function AdminPage({
                                   <strong>{b.guestName}</strong>
                                   {b.isQuietChair && <span className="sck-quiet-tag">Quiet</span>}
                                 </div>
+                                {(b.notes || b.guestNotes) && (
+                                  <div
+                                    className="sck-table-special-requests"
+                                    onClick={() => setSelectedBookingDetail(b)}
+                                    role="button"
+                                    tabIndex={0}
+                                    style={{ marginTop: 4 }}
+                                    title="Special request from client — Click to view full dossier"
+                                  >
+                                    <span className="sck-req-label">
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                        <polyline points="14 2 14 8 20 8" />
+                                        <line x1="16" y1="13" x2="8" y2="13" />
+                                        <line x1="16" y1="17" x2="8" y2="17" />
+                                      </svg>
+                                      REQ:
+                                    </span>
+                                    <span className="sck-req-text">&ldquo;{b.notes || b.guestNotes}&rdquo;</span>
+                                  </div>
+                                )}
                                 {b.guestPhone && (
                                   <div className="sck-quick-connect-row" style={{ marginTop: 4 }}>
                                     <a
@@ -1270,6 +1340,11 @@ export default function AdminPage({
                                           <polyline points="12 6 12 12 16 14" />
                                         </svg>
                                         <strong>{b.time || 'TBD'}</strong>
+                                        {calculateEndTime(b.time) && (
+                                          <span style={{ fontSize: '0.75rem', opacity: 0.75, marginLeft: '4px' }}>
+                                            (until {calculateEndTime(b.time)})
+                                          </span>
+                                        )}
                                       </span>
                                       {sch.relativeBadge && (
                                         <span className={`sck-relative-pill is-${sch.relativeBadge.type}`}>
@@ -1526,7 +1601,12 @@ export default function AdminPage({
                                 </svg>
                                 <span>{b.time || 'TBD'}</span>
                               </div>
-                              <span className={`sck-status-pill is-${(b.status || 'pending').toLowerCase()}`}>
+                              {calculateEndTime(b.time) && (
+                                <div style={{ fontSize: '0.74rem', opacity: 0.75, marginTop: '2px', color: '#ffea9f' }}>
+                                  until {calculateEndTime(b.time)}
+                                </div>
+                              )}
+                              <span className={`sck-status-pill is-${(b.status || 'pending').toLowerCase()}`} style={{ marginTop: '6px' }}>
                                 {b.status || 'Pending'}
                               </span>
                             </div>
@@ -1536,7 +1616,7 @@ export default function AdminPage({
                               <div className="sck-agenda-client-top">
                                 <strong className="sck-agenda-client-name">{b.guestName}</strong>
                                 {b.isQuietChair && <span className="sck-quiet-tag">Quiet Chair</span>}
-                                <span className="sck-code-tag">{b.code || b.id.slice(0, 8)}</span>
+                                <span className="sck-code-tag">{b.code || getOrGenerateBookingCode(b)}</span>
                               </div>
 
                               {b.guestPhone ? (
@@ -1578,8 +1658,24 @@ export default function AdminPage({
                               )}
 
                               {(b.notes || b.guestNotes) && (
-                                <div className="sck-agenda-notes">
-                                  <span className="sck-notes-tag is-req">Request:</span> <em>&ldquo;{b.notes || b.guestNotes}&rdquo;</em>
+                                <div
+                                  className="sck-agenda-notes"
+                                  onClick={() => setSelectedBookingDetail(b)}
+                                  role="button"
+                                  tabIndex={0}
+                                  title="Special request from client — Click to view full dossier"
+                                  style={{ cursor: 'pointer' }}
+                                >
+                                  <span className="sck-req-label">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                      <polyline points="14 2 14 8 20 8" />
+                                      <line x1="16" y1="13" x2="8" y2="13" />
+                                      <line x1="16" y1="17" x2="8" y2="17" />
+                                    </svg>
+                                    REQ:
+                                  </span>
+                                  <span className="sck-req-text">&ldquo;{b.notes || b.guestNotes}&rdquo;</span>
                                 </div>
                               )}
 
@@ -1676,8 +1772,8 @@ export default function AdminPage({
                         {sortedFilteredBookings.map((b) => (
                           <tr key={b.id}>
                             <td style={{ width: '135px', whiteSpace: 'nowrap' }}>
-                              <span className="sck-code-tag" title={b.code || b.id}>
-                                {b.code || b.id.slice(0, 10)}
+                              <span className="sck-code-tag" title={b.code || getOrGenerateBookingCode(b)}>
+                                {b.code || getOrGenerateBookingCode(b)}
                               </span>
                             </td>
                             <td>
@@ -1738,9 +1834,24 @@ export default function AdminPage({
                                     <span className="sck-notes-tag is-quiet">🤫 Silent Chair</span>
                                   )}
                                   {(b.notes || b.guestNotes) && (
-                                    <span className="sck-table-special-requests" title={b.notes || b.guestNotes}>
-                                      <span className="sck-req-label">Req:</span> &ldquo;{b.notes || b.guestNotes}&rdquo;
-                                    </span>
+                                    <div
+                                      className="sck-table-special-requests"
+                                      onClick={() => setSelectedBookingDetail(b)}
+                                      role="button"
+                                      tabIndex={0}
+                                      title="Special request from client — Click to view full dossier"
+                                    >
+                                      <span className="sck-req-label">
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                          <polyline points="14 2 14 8 20 8" />
+                                          <line x1="16" y1="13" x2="8" y2="13" />
+                                          <line x1="16" y1="17" x2="8" y2="17" />
+                                        </svg>
+                                        REQ:
+                                      </span>
+                                      <span className="sck-req-text">&ldquo;{b.notes || b.guestNotes}&rdquo;</span>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -1761,6 +1872,11 @@ export default function AdminPage({
                                           <polyline points="12 6 12 12 16 14" />
                                         </svg>
                                         <strong>{b.time || 'TBD'}</strong>
+                                        {calculateEndTime(b.time) && (
+                                          <span style={{ fontSize: '0.75rem', opacity: 0.75, marginLeft: '4px' }}>
+                                            (until {calculateEndTime(b.time)})
+                                          </span>
+                                        )}
                                       </span>
                                       {sch.relativeBadge && (
                                         <span className={`sck-relative-pill is-${sch.relativeBadge.type}`}>
@@ -2430,9 +2546,10 @@ export default function AdminPage({
                   </span>
                 </div>
                 <p className="sck-modal-subtitle" style={{ margin: '4px 0 0', opacity: 0.85, fontSize: '0.82rem' }}>
-                  Reference: <strong className="sck-code-tag" style={{ color: 'var(--sck-gold-primary, #d4af37)', fontSize: '0.88rem' }}>{selectedBookingDetail.code || selectedBookingDetail.id}</strong>
+                  Reference: <strong className="sck-code-tag" style={{ color: 'var(--sck-gold-primary, #d4af37)', fontSize: '0.88rem' }}>{selectedBookingDetail.code || getOrGenerateBookingCode(selectedBookingDetail)}</strong>
                   {(() => {
-                    const parsed = parseBookingCode(selectedBookingDetail.code)
+                    const code = selectedBookingDetail.code || getOrGenerateBookingCode(selectedBookingDetail)
+                    const parsed = parseBookingCode(code)
                     if (parsed) {
                       return (
                         <span style={{ marginLeft: 6, color: '#a7f3d0', fontSize: '0.78rem', background: 'rgba(80, 200, 160, 0.12)', padding: '2px 6px', borderRadius: '4px' }}>
@@ -2556,19 +2673,29 @@ export default function AdminPage({
                 <div className="sck-dossier-grid">
                   <div className="sck-dossier-item">
                     <span className="sck-dossier-label">Treatment Service</span>
-                    <strong style={{ fontSize: '1.05rem', color: '#fff' }}>{selectedBookingDetail.serviceName || selectedBookingDetail.service_name}</strong>
+                    <strong style={{ fontSize: '1.05rem', color: '#fff' }}>{selectedBookingDetail.serviceName || selectedBookingDetail.service_name || 'Cut & Styling'}</strong>
                   </div>
                   <div className="sck-dossier-item">
-                    <span className="sck-dossier-label">Rate / Reservation Estimate</span>
+                    <span className="sck-dossier-label">Rate / Estimated Investment</span>
                     <span className="sck-price-badge">{formatPrice(selectedBookingDetail.servicePrice || selectedBookingDetail.service_price)}</span>
                   </div>
                   <div className="sck-dossier-item">
-                    <span className="sck-dossier-label">Stylist &amp; Station</span>
-                    <span>{selectedBookingDetail.stylist || 'Barber Hub Dedicated Chair'}</span>
+                    <span className="sck-dossier-label">Session Experience</span>
+                    <span style={{ color: '#ffffff', fontWeight: 500 }}>Dedicated 1-on-1 Solo Atelier (Single Chair)</span>
                   </div>
                   <div className="sck-dossier-item">
-                    <span className="sck-dossier-label">Scheduled Date &amp; Time</span>
-                    <strong>{selectedBookingDetail.date} at {selectedBookingDetail.time}</strong>
+                    <span className="sck-dossier-label">Scheduled Appointment</span>
+                    <strong style={{ color: 'var(--sck-gold-primary, #d4af37)', fontSize: '0.98rem' }}>
+                      {formatFriendlySchedule(selectedBookingDetail.date || selectedBookingDetail.appointment_date, selectedBookingDetail.time || selectedBookingDetail.appointment_time, selectedBookingDetail.serviceDuration || selectedBookingDetail.duration || '60 min')}
+                    </strong>
+                  </div>
+                  <div className="sck-dossier-item">
+                    <span className="sck-dossier-label">Fifth Avenue Location</span>
+                    <span style={{ fontSize: '0.86rem', color: 'rgba(255,255,255,0.85)' }}>Fourth Floor, 587 Fifth Avenue, New York, NY 10017</span>
+                  </div>
+                  <div className="sck-dossier-item">
+                    <span className="sck-dossier-label">Stylist &amp; Station</span>
+                    <span>{selectedBookingDetail.stylist || 'Fifth Avenue Master Stylist'}</span>
                   </div>
                 </div>
               </div>
@@ -2747,6 +2874,32 @@ export default function AdminPage({
                   <span><strong>Double-Booking Conflict:</strong> An active reservation is already scheduled for <strong>{newBookingDate}</strong> at <strong>{newBookingTime}</strong>. Please choose another time.</span>
                 </div>
               )}
+
+              <div className="sck-form-row">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label style={{ margin: 0 }}>Special Requests / Hair Goals (Optional)</label>
+                  <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>{newGuestNotes.length}/300</span>
+                </div>
+                <textarea
+                  rows={3}
+                  maxLength={300}
+                  placeholder="e.g. Color history, scalp sensitivity, desired transformation..."
+                  value={newGuestNotes}
+                  onChange={(e) => setNewGuestNotes(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '0.88rem',
+                    fontFamily: 'inherit',
+                    resize: 'vertical',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
 
               <div className="sck-form-row">
                 <label className="sck-checkbox-label">

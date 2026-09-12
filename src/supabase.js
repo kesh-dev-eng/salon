@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { generateUniqueBookingCode } from './utils/bookingCode.js'
+import { generateUniqueBookingCode, getOrGenerateBookingCode, mergeBookingRecords } from './utils/bookingCode.js'
 
 export const SUPABASE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
@@ -357,28 +357,45 @@ export async function fetchBookingsFromSupabase() {
 export async function fetchAdminBookingsFromSupabase() {
   if (!isSupabaseConfigured) return []
 
-  const mapBookingRow = (b) => ({
-    id: b.id,
-    code: b.code || generateUniqueBookingCode(
-      b.client_name || b.guestName,
-      b.client_phone || b.guestPhone,
-      b.client_email || b.guestEmail
-    ),
-    guestName: b.client_name || b.guestName || 'Valued Guest',
-    guestPhone: b.client_phone || b.guestPhone || '',
-    guestEmail: b.client_email || b.guestEmail || '',
-    serviceName: b.service_name || b.serviceName || 'Cut & Styling',
-    servicePrice: b.service_price || b.servicePrice || 'Rs 150+',
-    stylist: b.stylist || 'Fifth Avenue Master Stylist',
-    date: b.appointment_date || b.date,
-    time: b.appointment_time || b.time,
-    isQuietChair: Boolean(b.quiet_chair ?? b.isQuietChair ?? b.quietChair),
-    quiet_chair: Boolean(b.quiet_chair ?? b.isQuietChair ?? b.quietChair),
-    status: b.status ? (b.status.charAt(0).toUpperCase() + b.status.slice(1).toLowerCase()) : 'Confirmed',
-    guestNotes: b.notes || b.guestNotes || '',
-    notes: b.notes || b.guestNotes || '',
-    createdAt: (b.created_at || b.createdAt || '').split('T')[0] || new Date().toISOString().split('T')[0]
-  })
+  const mapBookingRow = (b) => {
+    const rawName = b.client_name || b.guestName || b.clientName || ''
+    const rawPhone = b.client_phone || b.guestPhone || b.clientPhone || ''
+    const rawNotes = b.notes || b.guestNotes || ''
+    const rawEmail = b.client_email || b.guestEmail || b.clientEmail || b.user_email || ''
+    const rawService = b.service_name || b.serviceName || 'Cut & Styling'
+    const rawPrice = b.service_price || b.servicePrice || 'Rs 150+'
+    const rawDate = b.appointment_date || b.date || ''
+    const rawTime = b.appointment_time || b.time || ''
+    const isQuiet = Boolean(b.quiet_chair ?? b.isQuietChair ?? b.quietChair)
+    const rawCode = b.code || getOrGenerateBookingCode(b)
+
+    return {
+      id: b.id,
+      code: rawCode,
+      client_name: rawName || 'Valued Guest',
+      guestName: rawName || 'Valued Guest',
+      client_phone: rawPhone,
+      guestPhone: rawPhone,
+      client_email: rawEmail,
+      guestEmail: rawEmail,
+      service_name: rawService,
+      serviceName: rawService,
+      service_price: rawPrice,
+      servicePrice: rawPrice,
+      stylist: b.stylist || 'Fifth Avenue Master Stylist',
+      appointment_date: rawDate,
+      date: rawDate,
+      appointment_time: rawTime,
+      time: rawTime,
+      quiet_chair: isQuiet,
+      isQuietChair: isQuiet,
+      status: b.status ? (b.status.charAt(0).toUpperCase() + b.status.slice(1).toLowerCase()) : 'Confirmed',
+      notes: rawNotes,
+      guestNotes: rawNotes,
+      createdAt: (b.created_at || b.createdAt || '').split('T')[0] || new Date().toISOString().split('T')[0],
+      created_at: b.created_at || b.createdAt || new Date().toISOString()
+    }
+  }
 
   // 1. Primary: Direct SELECT from public.bookings (returns complete customer dossiers)
   try {
@@ -396,17 +413,15 @@ export async function fetchAdminBookingsFromSupabase() {
 
   // 2. Secondary: RPC call admin_fetch_bookings
   const adminEmail = getActiveAdminEmail()
-  if (adminEmail) {
-    try {
-      const { data: rpcData, error: rpcErr } = await supabase.rpc('admin_fetch_bookings', {
-        p_admin_email: adminEmail
-      })
-      if (!rpcErr && rpcData && rpcData.length > 0) {
-        return rpcData.map(mapBookingRow)
-      }
-    } catch (err) {
-      console.warn('RPC admin_fetch_bookings notice:', err?.message)
+  try {
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('admin_fetch_bookings', {
+      p_admin_email: adminEmail || null
+    })
+    if (!rpcErr && rpcData && rpcData.length > 0) {
+      return rpcData.map(mapBookingRow)
     }
+  } catch (err) {
+    console.warn('RPC admin_fetch_bookings notice:', err?.message)
   }
 
   // 3. Tertiary: Query public_booked_slots view
@@ -452,29 +467,31 @@ export async function syncBookingToSupabase(booking) {
       return { conflict: true, error: 'This time slot has already been reserved for this date.' }
     }
 
+    const clientName = (booking.client_name || booking.guestName || booking.clientName || '').trim() || 'Valued Guest'
+    const clientPhone = (booking.client_phone || booking.guestPhone || booking.clientPhone || '').trim()
+    const clientEmail = (booking.client_email || booking.guestEmail || booking.clientEmail || '').trim()
+    const guestNotes = (booking.notes || booking.guestNotes || '').trim()
+    const normalizedStatus = (booking.status || 'confirmed').toLowerCase() === 'pending' ? 'pending' : 'confirmed'
+
     const payload = {
       id: booking.id || `book-${Date.now()}`,
-      code: booking.code || generateUniqueBookingCode(
-        booking.clientName || booking.guestName || booking.client_name,
-        booking.clientPhone || booking.guestPhone || booking.client_phone,
-        booking.clientEmail || booking.guestEmail || booking.client_email
-      ),
-      client_name: booking.clientName || booking.guestName || booking.client_name || 'Valued Guest',
-      client_phone: booking.clientPhone || booking.guestPhone || booking.client_phone || '',
-      client_email: booking.clientEmail || booking.guestEmail || booking.client_email || '',
-      user_email: booking.userEmail || booking.user_email || '',
-      service_name: booking.serviceName || booking.service_name || 'Bespoke Styling',
-      service_price: booking.servicePrice || booking.service_price || '',
+      code: booking.code || getOrGenerateBookingCode(booking),
+      client_name: clientName,
+      client_phone: clientPhone,
+      client_email: clientEmail,
+      user_email: booking.user_email || booking.userEmail || '',
+      service_name: booking.service_name || booking.serviceName || 'Bespoke Styling',
+      service_price: booking.service_price || booking.servicePrice || '',
       stylist: booking.stylist || 'Fifth Avenue Master Stylist',
       appointment_date: bDate,
       appointment_time: bTime,
-      quiet_chair: Boolean(booking.quietChair ?? booking.quiet_chair ?? booking.isQuietChair),
-      status: (booking.status || 'confirmed').toLowerCase() === 'confirmed' ? 'confirmed' : 'pending',
-      notes: booking.notes || booking.guestNotes || '',
-      created_at: booking.createdAt || booking.created_at || new Date().toISOString()
+      quiet_chair: Boolean(booking.quiet_chair ?? booking.isQuietChair ?? booking.quietChair),
+      status: normalizedStatus,
+      notes: guestNotes,
+      created_at: booking.created_at || (booking.createdAt ? new Date(booking.createdAt).toISOString() : new Date().toISOString())
     }
 
-    // Insert new booking (do NOT use .select() or .upsert() as anon lacks SELECT & UPDATE on bookings table)
+    // Insert new booking
     const { error } = await supabase
       .from('bookings')
       .insert(payload)
@@ -495,13 +512,14 @@ export async function syncBookingToSupabase(booking) {
 
 export async function updateBookingStatusInSupabase(id, status) {
   if (!isSupabaseConfigured) return null
+  const normalizedStatus = (status || 'confirmed').toLowerCase()
   const adminEmail = getActiveAdminEmail()
   if (adminEmail) {
     try {
       const { error: rpcErr } = await supabase.rpc('admin_update_booking_status', {
         p_admin_email: adminEmail,
         p_booking_id: id,
-        p_status: status
+        p_status: normalizedStatus
       })
       if (!rpcErr) return true
     } catch (err) {
@@ -509,7 +527,7 @@ export async function updateBookingStatusInSupabase(id, status) {
     }
   }
   try {
-    const { error } = await supabase.from('bookings').update({ status }).eq('id', id)
+    const { error } = await supabase.from('bookings').update({ status: normalizedStatus }).eq('id', id)
     if (error) {
       console.warn('Supabase updateBookingStatus notice:', error.message)
       return null
@@ -901,7 +919,7 @@ begin
 
   -- Bookings: Status domain, non-empty client name and valid date format
   if not exists (select 1 from pg_constraint where conname = 'chk_bookings_status') then
-    alter table public.bookings add constraint chk_bookings_status check (status in ('pending', 'confirmed', 'completed', 'cancelled'));
+    alter table public.bookings add constraint chk_bookings_status check (lower(trim(status)) in ('pending', 'confirmed', 'completed', 'cancelled'));
   end if;
   if not exists (select 1 from pg_constraint where conname = 'chk_bookings_name') then
     alter table public.bookings add constraint chk_bookings_name check (length(trim(client_name)) > 0);
@@ -1294,7 +1312,7 @@ create policy "Public insert appointment booking"
   with check (
     length(trim(client_name)) > 0
     and length(trim(appointment_date)) = 10
-    and status in ('pending', 'confirmed')
+    and lower(trim(status)) in ('pending', 'confirmed')
   );
 
 create policy "Public update bookings"

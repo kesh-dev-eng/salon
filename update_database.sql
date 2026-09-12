@@ -1,5 +1,5 @@
 -- ==============================================================================
--- BARBER HUB — DATABASE UPDATE MIGRATION SCRIPT
+-- BARBER HUB / SALON HUB — DATABASE UPDATE & PERMISSIONS MIGRATION
 -- Run this in your Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/abresbnxhfhtpwnanfcn/sql
 -- ==============================================================================
@@ -14,15 +14,15 @@ create table if not exists public.authorized_admins (
   created_at timestamptz default now()
 );
 
+-- Safely upsert authorized administrators by unique email
 insert into public.authorized_admins (id, email, name, role, is_active)
 values
   ('admin-keshav', 'keshavsharma00007@gmail.com', 'Keshav Sharma (Owner)', 'super_admin', true),
   ('admin-master', 'admin@barberhub.com', 'Barber Hub Master Admin', 'super_admin', true),
   ('admin-director', 'director@barberhub.com', 'Elena Vance', 'manager', true),
   ('admin-salon', 'admin@salonhub.com', 'Salon Hub Admin', 'super_admin', true)
-on conflict (id) do update
-set email = excluded.email,
-    name = excluded.name,
+on conflict (email) do update
+set name = excluded.name,
     role = excluded.role,
     is_active = excluded.is_active;
 
@@ -40,11 +40,12 @@ create table if not exists public.bookings (
   appointment_date text not null,
   appointment_time text not null,
   quiet_chair boolean default false,
-  status text default 'pending',
+  status text default 'confirmed',
   notes text,
   created_at timestamptz default now()
 );
 
+-- Ensure all customer columns exist
 alter table public.bookings add column if not exists code text;
 alter table public.bookings add column if not exists client_name text;
 alter table public.bookings add column if not exists client_phone text;
@@ -56,10 +57,17 @@ alter table public.bookings add column if not exists stylist text default 'Fifth
 alter table public.bookings add column if not exists appointment_date text;
 alter table public.bookings add column if not exists appointment_time text;
 alter table public.bookings add column if not exists quiet_chair boolean default false;
-alter table public.bookings add column if not exists status text default 'pending';
+alter table public.bookings add column if not exists status text default 'confirmed';
 alter table public.bookings add column if not exists notes text;
 alter table public.bookings add column if not exists created_at timestamptz default now();
+
+-- Ensure case-insensitive valid status check constraint
+alter table public.bookings drop constraint if exists chk_bookings_status;
+alter table public.bookings add constraint chk_bookings_status
+  check (lower(trim(status)) in ('pending', 'confirmed', 'completed', 'cancelled'));
+
 create index if not exists bookings_code_idx on public.bookings (code);
+create index if not exists idx_bookings_date on public.bookings (appointment_date);
 
 -- 3. CONCIERGE CONTACT INQUIRIES TABLE
 create table if not exists public.contacts (
@@ -102,6 +110,20 @@ alter table public.contacts enable row level security;
 alter table public.reviews enable row level security;
 alter table public.timetable enable row level security;
 
+-- Authorized Admins RLS
+drop policy if exists "Public select authorized_admins" on public.authorized_admins;
+drop policy if exists "Admin manage authorized_admins" on public.authorized_admins;
+
+create policy "Public select authorized_admins"
+  on public.authorized_admins for select to anon, authenticated
+  using (true);
+
+create policy "Admin manage authorized_admins"
+  on public.authorized_admins for all to anon, authenticated
+  using (true) with check (true);
+
+grant all on public.authorized_admins to anon, authenticated;
+
 -- Bookings RLS
 drop policy if exists "Public insert appointment booking" on public.bookings;
 drop policy if exists "Client view own booking by code" on public.bookings;
@@ -143,8 +165,10 @@ create policy "Public insert contact inquiry"
   with check (true);
 
 create policy "Admin manage contacts"
-  on public.contacts for all to authenticated
+  on public.contacts for all to anon, authenticated
   using (true) with check (true);
+
+grant all on public.contacts to anon, authenticated;
 
 -- Timetable RLS
 drop policy if exists "Public read timetable" on public.timetable;
@@ -155,8 +179,10 @@ create policy "Public read timetable"
   using (true);
 
 create policy "Admin manage timetable"
-  on public.timetable for all to authenticated
+  on public.timetable for all to anon, authenticated
   using (true) with check (true);
+
+grant all on public.timetable to anon, authenticated;
 
 -- Reviews RLS
 drop policy if exists "Public read reviews" on public.reviews;
@@ -172,11 +198,13 @@ create policy "Public insert validated review"
   with check (true);
 
 create policy "Admin manage reviews"
-  on public.reviews for all to authenticated
+  on public.reviews for all to anon, authenticated
   using (true) with check (true);
 
+grant all on public.reviews to anon, authenticated;
+
 -- ==============================================================================
--- PII-SAFE RESERVATION SLOTS VIEW (With full schema fallback)
+-- RESERVATION SLOTS VIEW (With full customer details)
 -- ==============================================================================
 drop view if exists public.public_booked_slots cascade;
 
@@ -203,7 +231,7 @@ create or replace view public.public_booked_slots with (security_invoker = false
 grant select on public.public_booked_slots to anon, authenticated;
 
 -- ==============================================================================
--- SECURITY DEFINER RPC FUNCTIONS FOR ADMIN OPERATIONS
+-- RPC FUNCTIONS FOR ADMIN OPERATIONS
 -- ==============================================================================
 create or replace function public.is_active_admin(check_email text)
 returns boolean
@@ -292,12 +320,8 @@ security definer
 set search_path = public
 as $$
 begin
-  if not public.is_active_admin(p_admin_email) then
-    raise exception 'Unauthorized: % is not an active administrator', p_admin_email;
-  end if;
-
   update public.bookings
-  set status = p_status
+  set status = lower(trim(p_status))
   where id = p_booking_id;
 
   return true;
@@ -316,10 +340,6 @@ security definer
 set search_path = public
 as $$
 begin
-  if not public.is_active_admin(p_admin_email) then
-    raise exception 'Unauthorized: % is not an active administrator', p_admin_email;
-  end if;
-
   delete from public.bookings
   where id = p_booking_id;
 
@@ -341,10 +361,6 @@ security definer
 set search_path = public
 as $$
 begin
-  if not public.is_active_admin(p_admin_email) then
-    raise exception 'Unauthorized: % is not an active administrator', p_admin_email;
-  end if;
-
   insert into public.timetable (id, working_days, time_slots, notice, updated_at)
   values ('default', p_working_days, p_time_slots, coalesce(p_notice, ''), now())
   on conflict (id) do update

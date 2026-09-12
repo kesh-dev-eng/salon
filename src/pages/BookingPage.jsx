@@ -466,11 +466,12 @@ export default function BookingPage({
     }
 
     setIsSubmitting(true)
-    const code = generateUniqueBookingCode(guestName, guestPhone, '', allBookings)
+    const bookingId = 'bk-' + Date.now()
+    const code = generateUniqueBookingCode(guestName, guestPhone, '', allBookings, bookingId)
     setConfirmationCode(code)
 
     const newBooking = {
-      id: 'bk-' + Date.now(),
+      id: bookingId,
       code: code,
       guestName: guestName.trim(),
       client_name: guestName.trim(),

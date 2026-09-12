@@ -15,6 +15,7 @@ import BookingPage from './pages/BookingPage'
 import AdminPage from './pages/AdminPage'
 import Loader from './components/Loader'
 import { fetchTimetableFromSupabase, syncTimetableToSupabase, fetchAdminBookingsFromSupabase } from './supabase'
+import { mergeBookingRecords } from './utils/bookingCode.js'
 import './App.css'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -140,11 +141,27 @@ export default function App() {
     fetchAdminBookingsFromSupabase().then((cloudBookings) => {
       if (cloudBookings && cloudBookings.length > 0) {
         setAtelierState((prev) => {
-          const map = new Map()
-          cloudBookings.forEach((b) => map.set(b.id || b.code, b))
+          const localMap = new Map()
           ;(prev.bookings || []).forEach((b) => {
-            if (!map.has(b.id || b.code)) map.set(b.id || b.code, b)
+            if (b.id) localMap.set(b.id, b)
+            if (b.code) localMap.set(b.code, b)
           })
+
+          const map = new Map()
+          cloudBookings.forEach((cloudB) => {
+            const key = cloudB.id || cloudB.code
+            const localB = localMap.get(cloudB.id) || localMap.get(cloudB.code)
+            const merged = mergeBookingRecords(cloudB, localB)
+            map.set(merged.id || key, merged)
+          })
+
+          ;(prev.bookings || []).forEach((b) => {
+            const key = b.id || b.code
+            if (!map.has(b.id) && !map.has(b.code)) {
+              map.set(key, b)
+            }
+          })
+
           const updated = { ...prev, bookings: Array.from(map.values()) }
           saveAtelierData(updated)
           return updated
