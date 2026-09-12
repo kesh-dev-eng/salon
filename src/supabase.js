@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { generateUniqueBookingCode } from './utils/bookingCode'
+import { generateUniqueBookingCode } from './utils/bookingCode.js'
 
 export const SUPABASE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
@@ -957,6 +957,8 @@ create index if not exists idx_authorized_admins_email
 -- Public calendar queries use this view to inspect booked slots WITHOUT exposing
 -- client names, phone numbers, emails, or personal appointment notes.
 -- ==============================================================================
+drop view if exists public.public_booked_slots cascade;
+
 create or replace view public.public_booked_slots with (security_invoker = false) as
   select
     id,
@@ -1302,6 +1304,11 @@ create policy "Public update bookings"
 create policy "Public delete bookings"
   on public.bookings for delete to anon, authenticated
   using (true);
+
+grant all on public.bookings to anon, authenticated;
+grant all on public.contacts to anon, authenticated;
+grant all on public.reviews to anon, authenticated;
+grant all on public.timetable to anon, authenticated;
 
 -- 7. Timetable: Public can read for live booking schedule
 create policy "Public read timetable"

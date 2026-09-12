@@ -27,7 +27,7 @@ import {
   normalizeTimeStr,
   fetchAdminBookingsFromSupabase
 } from '../supabase'
-import { generateUniqueBookingCode, parseBookingCode } from '../utils/bookingCode'
+import { generateUniqueBookingCode, parseBookingCode } from '../utils/bookingCode.js'
 
 export default function AdminPage({
   services = [],
@@ -1310,18 +1310,17 @@ export default function AdminPage({
                   <h2 className="sck-pane-title">Appointments &amp; Reservations</h2>
                   <p className="sck-pane-subtitle">Manage guest schedules, approve sessions, and record walk-ins.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
                   <button
                     type="button"
                     className="sck-btn-ghost"
                     onClick={() => handleSyncCloudBookings(false)}
                     disabled={isSyncingBookings}
                     title="Fetch latest online bookings from Supabase Cloud"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                   >
                     <span style={{ display: 'inline-block', transform: isSyncingBookings ? 'rotate(180deg)' : 'none', transition: 'transform 0.4s ease' }}>↻</span>
-                    {isSyncingBookings ? 'Syncing...' : 'Sync Cloud'}
-                    {lastSyncTime && <span style={{ opacity: 0.6, fontSize: '0.75rem', marginLeft: '2px' }}>({lastSyncTime})</span>}
+                    <span>{isSyncingBookings ? 'Syncing...' : 'Sync Cloud'}</span>
+                    {lastSyncTime && <span className="sck-sync-time">{lastSyncTime}</span>}
                   </button>
                   <button
                     type="button"
@@ -1611,30 +1610,36 @@ export default function AdminPage({
                                 >
                                   Details
                                 </button>
-                                <button
-                                  type="button"
-                                  className="sck-act-btn is-confirm"
-                                  onClick={() => handleUpdateBookingStatus(b.id, 'Confirmed')}
-                                  title="Mark Confirmed"
-                                >
-                                  Confirm
-                                </button>
-                                <button
-                                  type="button"
-                                  className="sck-act-btn is-complete"
-                                  onClick={() => handleUpdateBookingStatus(b.id, 'Completed')}
-                                  title="Mark Completed"
-                                >
-                                  Complete
-                                </button>
-                                <button
-                                  type="button"
-                                  className="sck-act-btn is-cancel"
-                                  onClick={() => handleUpdateBookingStatus(b.id, 'Cancelled')}
-                                  title="Mark Cancelled"
-                                >
-                                  Cancel
-                                </button>
+                                {b.status !== 'Confirmed' && (
+                                  <button
+                                    type="button"
+                                    className="sck-act-btn is-confirm"
+                                    onClick={() => handleUpdateBookingStatus(b.id, 'Confirmed')}
+                                    title="Mark Confirmed"
+                                  >
+                                    Confirm
+                                  </button>
+                                )}
+                                {b.status !== 'Completed' && (
+                                  <button
+                                    type="button"
+                                    className="sck-act-btn is-complete"
+                                    onClick={() => handleUpdateBookingStatus(b.id, 'Completed')}
+                                    title="Mark Completed"
+                                  >
+                                    Complete
+                                  </button>
+                                )}
+                                {b.status !== 'Cancelled' && (
+                                  <button
+                                    type="button"
+                                    className="sck-act-btn is-cancel"
+                                    onClick={() => handleUpdateBookingStatus(b.id, 'Cancelled')}
+                                    title="Mark Cancelled"
+                                  >
+                                    Cancel
+                                  </button>
+                                )}
                               </div>
                               <button
                                 type="button"
@@ -1658,62 +1663,64 @@ export default function AdminPage({
                     <table className="sck-admin-table">
                       <thead>
                         <tr>
-                          <th>Ref</th>
+                          <th style={{ width: '135px' }}>Ref</th>
                           <th>Guest &amp; Contact</th>
                           <th>Treatment &amp; Stylist</th>
                           <th>When &amp; Time</th>
                           <th>Amount</th>
                           <th>Status</th>
-                          <th>Change Status</th>
-                          <th>Actions</th>
+                          <th style={{ textAlign: 'right', width: '200px' }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {sortedFilteredBookings.map((b) => (
                           <tr key={b.id}>
-                            <td>
-                              <span className="sck-code-tag">{b.code || b.id.slice(0, 8)}</span>
+                            <td style={{ width: '135px', whiteSpace: 'nowrap' }}>
+                              <span className="sck-code-tag" title={b.code || b.id}>
+                                {b.code || b.id.slice(0, 10)}
+                              </span>
                             </td>
                             <td>
                               <div className="sck-guest-cell">
                                 <div className="sck-guest-name">
                                   <strong>{b.guestName}</strong>
-                                  {b.isQuietChair && <span className="sck-quiet-tag">Quiet</span>}
                                 </div>
                                 {b.guestPhone ? (
                                   <div className="sck-customer-contact-box">
-                                    <span className="sck-phone-num">{b.guestPhone}</span>
-                                    <div className="sck-quick-connect-row">
-                                      <a
-                                        href={`tel:${formatCleanPhone(b.guestPhone)}`}
-                                        className="sck-contact-chip is-call"
-                                        title={`Call ${b.guestName}`}
-                                      >
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: 4 }}>
-                                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                                        </svg>
-                                        Call
-                                      </a>
-                                      <a
-                                        href={`https://wa.me/${formatCleanWhatsApp(b.guestPhone)}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="sck-contact-chip is-wa"
-                                        title={`WhatsApp ${b.guestName}`}
-                                      >
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', verticalAlign: '-1px', marginRight: 4 }}>
-                                          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                                        </svg>
-                                        WhatsApp
-                                      </a>
-                                      <button
-                                        type="button"
-                                        className="sck-contact-chip is-copy"
-                                        onClick={() => handleCopyPhone(b.id, b.guestPhone)}
-                                        title="Copy phone number"
-                                      >
-                                        {copiedPhoneId === b.id ? '✓ Copied' : 'Copy'}
-                                      </button>
+                                    <div className="sck-phone-row">
+                                      <span className="sck-phone-num">{b.guestPhone}</span>
+                                      <div className="sck-quick-connect-row">
+                                        <a
+                                          href={`tel:${formatCleanPhone(b.guestPhone)}`}
+                                          className="sck-contact-chip is-call"
+                                          title={`Call ${b.guestName}`}
+                                        >
+                                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                                          </svg>
+                                          Call
+                                        </a>
+                                        <a
+                                          href={`https://wa.me/${formatCleanWhatsApp(b.guestPhone)}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="sck-contact-chip is-wa"
+                                          title={`WhatsApp ${b.guestName}`}
+                                        >
+                                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                                          </svg>
+                                          WhatsApp
+                                        </a>
+                                        <button
+                                          type="button"
+                                          className="sck-contact-chip is-copy"
+                                          onClick={() => handleCopyPhone(b.id, b.guestPhone)}
+                                          title="Copy phone number"
+                                        >
+                                          {copiedPhoneId === b.id ? '✓' : 'Copy'}
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
                                 ) : (
@@ -1726,16 +1733,16 @@ export default function AdminPage({
                                     </a>
                                   </div>
                                 )}
-                                {(b.isQuietChair || b.quiet_chair) && (
-                                  <div style={{ marginTop: 4 }}>
+                                <div className="sck-guest-tags-row">
+                                  {(b.isQuietChair || b.quiet_chair) && (
                                     <span className="sck-notes-tag is-quiet">🤫 Silent Chair</span>
-                                  </div>
-                                )}
-                                {(b.notes || b.guestNotes) && (
-                                  <div className="sck-table-special-requests" title={b.notes || b.guestNotes}>
-                                    <span className="sck-req-label">Req:</span> &ldquo;{b.notes || b.guestNotes}&rdquo;
-                                  </div>
-                                )}
+                                  )}
+                                  {(b.notes || b.guestNotes) && (
+                                    <span className="sck-table-special-requests" title={b.notes || b.guestNotes}>
+                                      <span className="sck-req-label">Req:</span> &ldquo;{b.notes || b.guestNotes}&rdquo;
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             <td>
@@ -1778,50 +1785,54 @@ export default function AdminPage({
                               </span>
                             </td>
                             <td>
-                              <div className="sck-status-action-btns">
+                              <div className="sck-unified-actions">
                                 <button
                                   type="button"
                                   className="sck-act-btn is-details"
                                   onClick={() => setSelectedBookingDetail(b)}
-                                  title="View full customer submission dossier"
+                                  title="View full reservation dossier"
                                 >
                                   Details
                                 </button>
+                                {b.status !== 'Confirmed' && (
+                                  <button
+                                    type="button"
+                                    className="sck-act-btn is-confirm"
+                                    onClick={() => handleUpdateBookingStatus(b.id, 'Confirmed')}
+                                    title="Mark Confirmed"
+                                  >
+                                    Confirm
+                                  </button>
+                                )}
+                                {b.status !== 'Completed' && (
+                                  <button
+                                    type="button"
+                                    className="sck-act-btn is-complete"
+                                    onClick={() => handleUpdateBookingStatus(b.id, 'Completed')}
+                                    title="Mark Completed"
+                                  >
+                                    Complete
+                                  </button>
+                                )}
+                                {b.status !== 'Cancelled' && (
+                                  <button
+                                    type="button"
+                                    className="sck-act-btn is-cancel"
+                                    onClick={() => handleUpdateBookingStatus(b.id, 'Cancelled')}
+                                    title="Mark Cancelled"
+                                  >
+                                    Cancel
+                                  </button>
+                                )}
                                 <button
                                   type="button"
-                                  className="sck-act-btn is-confirm"
-                                  onClick={() => handleUpdateBookingStatus(b.id, 'Confirmed')}
-                                  title="Mark Confirmed"
+                                  className="sck-del-btn"
+                                  onClick={() => handleDeleteBooking(b.id)}
+                                  title="Remove reservation"
                                 >
-                                  Confirm
-                                </button>
-                                <button
-                                  type="button"
-                                  className="sck-act-btn is-complete"
-                                  onClick={() => handleUpdateBookingStatus(b.id, 'Completed')}
-                                  title="Mark Completed"
-                                >
-                                  Complete
-                                </button>
-                                <button
-                                  type="button"
-                                  className="sck-act-btn is-cancel"
-                                  onClick={() => handleUpdateBookingStatus(b.id, 'Cancelled')}
-                                  title="Mark Cancelled"
-                                >
-                                  Cancel
+                                  ✕
                                 </button>
                               </div>
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="sck-del-btn"
-                                onClick={() => handleDeleteBooking(b.id)}
-                                title="Delete record"
-                              >
-                                ✕
-                              </button>
                             </td>
                           </tr>
                         ))}

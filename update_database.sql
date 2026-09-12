@@ -127,6 +127,8 @@ create policy "Public delete bookings"
   on public.bookings for delete to anon, authenticated
   using (true);
 
+grant all on public.bookings to anon, authenticated;
+
 -- Contacts RLS
 drop policy if exists "Public insert contact inquiry" on public.contacts;
 drop policy if exists "Admin manage contacts" on public.contacts;
@@ -176,6 +178,8 @@ create policy "Admin manage reviews"
 -- ==============================================================================
 -- PII-SAFE RESERVATION SLOTS VIEW (With full schema fallback)
 -- ==============================================================================
+drop view if exists public.public_booked_slots cascade;
+
 create or replace view public.public_booked_slots with (security_invoker = false) as
   select
     id,

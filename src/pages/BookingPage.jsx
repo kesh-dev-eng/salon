@@ -6,7 +6,7 @@ import {
   normalizeTimeStr,
   isTimeSlotBooked
 } from '../supabase'
-import { generateUniqueBookingCode, extractPhoneLast4 } from '../utils/bookingCode'
+import { generateUniqueBookingCode, extractPhoneLast4 } from '../utils/bookingCode.js'
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -466,7 +466,7 @@ export default function BookingPage({
     }
 
     setIsSubmitting(true)
-    const code = generateUniqueBookingCode(guestName, guestPhone, '', effectiveBookings)
+    const code = generateUniqueBookingCode(guestName, guestPhone, '', allBookings)
     setConfirmationCode(code)
 
     const newBooking = {

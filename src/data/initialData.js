@@ -295,8 +295,8 @@ export function formatPrice(price) {
 
 export const INITIAL_TIMETABLE = {
   workingDays: [
-    { day: 'Sun', name: 'Sunday', isOpen: false, openTime: '10:00 AM', closeTime: '05:00 PM' },
-    { day: 'Mon', name: 'Monday', isOpen: false, openTime: '09:00 AM', closeTime: '07:00 PM' },
+    { day: 'Sun', name: 'Sunday', isOpen: true, openTime: '10:00 AM', closeTime: '06:00 PM' },
+    { day: 'Mon', name: 'Monday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
     { day: 'Tue', name: 'Tuesday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
     { day: 'Wed', name: 'Wednesday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
     { day: 'Thu', name: 'Thursday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
@@ -315,7 +315,7 @@ export const INITIAL_TIMETABLE = {
     { id: 't9', time: '06:30 PM', period: 'evening', label: 'Evening Couture', badge: 'Peak Slot', active: true },
     { id: 't10', time: '07:15 PM', period: 'evening', label: 'Late Salon Session', badge: 'VIP Evening', active: true },
   ],
-  notice: 'Tue – Sat: 9:00 AM – 7:00 PM · Private 1-on-1 chair sessions'
+  notice: 'Mon – Sun: 9:00 AM – 7:00 PM · Private 1-on-1 chair sessions'
 }
 
 export const STORAGE_KEY = 'salon_hub_store_v1'

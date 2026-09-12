@@ -8785,25 +8785,100 @@ section {
 }
 
 
-.sck-code-tag {
-  font-family: monospace;
-  font-size: 11px;
-  background: rgba(255, 255, 255, 0.06);
-  padding: 3px 6px;
-  border-radius: 4px;
-  color: #ff9000;
-  border: 1px solid rgba(255, 144, 0, 0.2);
+/* Toolbar Buttons */
+.sck-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #f0f0f0;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  font-family: inherit;
 }
 
+.sck-btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 144, 0, 0.45);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.sck-btn-ghost:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sck-sync-time {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.sck-btn-teal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #ff9000, #e07b00);
+  border: 1px solid rgba(255, 144, 0, 0.4);
+  color: #12100e;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255, 144, 0, 0.25);
+  transition: all 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  font-family: inherit;
+}
+
+.sck-btn-teal:hover {
+  background: linear-gradient(135deg, #ffa726, #ff9000);
+  box-shadow: 0 6px 20px rgba(255, 144, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Reference Code Tag */
+.sck-code-tag {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-size: 11.5px;
+  background: rgba(255, 144, 0, 0.08);
+  padding: 3px 8px;
+  border-radius: 5px;
+  color: #ffaa33;
+  border: 1px solid rgba(255, 144, 0, 0.28);
+  white-space: nowrap;
+}
+
+/* Guest & Contact Cell */
 .sck-guest-cell {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .sck-guest-name {
   font-weight: 700;
   color: #ffffff;
+  font-size: 13px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -8812,6 +8887,119 @@ section {
 .sck-guest-sub {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.5);
+}
+
+.sck-customer-contact-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sck-phone-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sck-phone-num {
+  font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.03em;
+}
+
+.sck-quick-connect-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sck-contact-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  line-height: 1.3;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  font-family: inherit;
+}
+
+.sck-contact-chip.is-call {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.sck-contact-chip.is-call:hover {
+  background: rgba(59, 130, 246, 0.3);
+  color: #ffffff;
+}
+
+.sck-contact-chip.is-wa {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.sck-contact-chip.is-wa:hover {
+  background: rgba(16, 185, 129, 0.3);
+  color: #ffffff;
+}
+
+.sck-contact-chip.is-copy {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.sck-contact-chip.is-copy:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.sck-guest-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.sck-table-special-requests {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: rgba(245, 235, 220, 0.88);
+  background: rgba(255, 144, 0, 0.08);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border-left: 2px solid #ff9000;
+  border-top: 1px solid rgba(255, 144, 0, 0.12);
+  border-right: 1px solid rgba(255, 144, 0, 0.12);
+  border-bottom: 1px solid rgba(255, 144, 0, 0.12);
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sck-table-special-requests .sck-req-label {
+  font-weight: 700;
+  color: #ffaa33;
+  text-transform: uppercase;
+  font-size: 9.5px;
 }
 
 .sck-quiet-tag {
@@ -8830,6 +9018,7 @@ section {
   background: rgba(255, 255, 255, 0.06);
   padding: 3px 8px;
   border-radius: 4px;
+  white-space: nowrap;
 }
 
 /* Status Pills */
@@ -8841,6 +9030,7 @@ section {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 
 .sck-status-pill.is-pending {
@@ -8867,68 +9057,107 @@ section {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* Action buttons */
+/* Unified Actions in Table */
+.sck-unified-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
 .sck-status-action-btns {
   display: flex;
   gap: 4px;
 }
 
 .sck-act-btn {
-  padding: 4px 8px;
-  font-size: 10px;
+  padding: 4px 9px;
+  font-size: 10.5px;
   font-weight: 700;
-  border-radius: 4px;
-  border: none;
+  border-radius: 5px;
+  border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  font-family: inherit;
+}
+
+.sck-act-btn.is-details {
+  background: rgba(255, 144, 0, 0.12);
+  color: #ffaa33;
+  border-color: rgba(255, 144, 0, 0.35);
+}
+
+.sck-act-btn.is-details:hover {
+  background: #ff9000;
+  color: #12100e;
+  transform: translateY(-1px);
 }
 
 .sck-act-btn.is-confirm {
-  background: rgba(16, 185, 129, 0.18);
+  background: rgba(16, 185, 129, 0.16);
   color: #34d399;
+  border-color: rgba(16, 185, 129, 0.32);
 }
+
 .sck-act-btn.is-confirm:hover {
   background: #10b981;
   color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .sck-act-btn.is-complete {
-  background: rgba(59, 130, 246, 0.18);
+  background: rgba(59, 130, 246, 0.16);
   color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.32);
 }
+
 .sck-act-btn.is-complete:hover {
   background: #3b82f6;
   color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .sck-act-btn.is-cancel {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.14);
   color: #f87171;
+  border-color: rgba(239, 68, 68, 0.28);
 }
+
 .sck-act-btn.is-cancel:hover {
   background: #ef4444;
   color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .sck-del-btn {
-  background: none;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.45);
   width: 26px;
   height: 26px;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
+  transition: all 0.15s ease;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  font-family: inherit;
+  flex-shrink: 0;
 }
 
 .sck-del-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: #ef4444;
-  color: #ffffff;
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ef4444;
+  transform: scale(1.05);
 }
 
 /* Services Catalog Grid */
@@ -11778,57 +12007,9 @@ html, body {
 }
 
 .sck-notes-tag.is-req {
-  background: rgba(212, 175, 55, 0.15);
-  color: var(--sck-gold-primary, #d4af37);
+  background: rgba(255, 144, 0, 0.15);
+  color: #ffaa33;
   margin-right: 4px;
 }
 
-.sck-table-special-requests {
-  margin-top: 5px;
-  font-size: 0.78rem;
-  color: rgba(240, 235, 220, 0.85);
-  font-style: italic;
-  max-width: 220px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  background: rgba(212, 175, 55, 0.06);
-  padding: 3px 6px;
-  border-radius: 4px;
-  border-left: 2px solid var(--sck-gold-primary, #d4af37);
-}
-
-.sck-table-special-requests .sck-req-label {
-  font-style: normal;
-  font-weight: 700;
-  font-size: 0.7rem;
-  color: var(--sck-gold-primary, #d4af37);
-  margin-right: 3px;
-  text-transform: uppercase;
-}
-
-.sck-act-btn.is-details {
-  background: rgba(212, 175, 55, 0.15);
-  color: var(--sck-gold-primary, #d4af37);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-}
-
-.sck-act-btn.is-details:hover {
-  background: var(--sck-gold-primary, #d4af37);
-  color: #12100e;
-}
-
-.sck-code-tag {
-  display: inline-block;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  font-size: 0.8rem;
-  color: var(--sck-gold-primary, #d4af37);
-  background: rgba(212, 175, 55, 0.08);
-  border: 1px solid rgba(212, 175, 55, 0.28);
-  padding: 3px 8px;
-  border-radius: 4px;
-  white-space: nowrap;
-}
 
