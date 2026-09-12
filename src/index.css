@@ -1,0 +1,49 @@
+:root {
+  /* Core palette — Rich Onyx Blacks */
+  --ink:       #070606;
+  --deep:      #0e0d0c;
+  --smoke:     #171513;
+  --ivory:     #ffffff;
+  --ivory-dim: #d1cbc1;
+  --ivory-muted: rgba(255,255,255,0.6);
+
+  /* Primary Accent: #ff9000 & Warm Orange Blends */
+  --gold:      #ff9000;
+  --gold-light: #ffaa33;
+  --gold-dim:  rgba(255,144,0,0.16);
+  --gold-glow: rgba(255,144,0,0.42);
+  --rose:      #ff9000;
+  --rose-dim:  rgba(255,144,0,0.15);
+  --plum:      #e07a00;
+  --sage:      #ff9000;
+
+  /* Typography */
+  --serif: 'Fraunces', serif;
+  --sans:  'Inter', sans-serif;
+  --script: 'Edwardian Script ITC', 'Great Vibes', 'Allura', cursive;
+  --font-edwardian: 'Edwardian Script ITC', 'Great Vibes', 'Allura', cursive;
+  --font-great-vibes: 'Great Vibes', cursive;
+  --font-allura: 'Allura', cursive;
+
+  /* Borders */
+  --line:      rgba(255,144,0,0.22);
+  --line-soft: rgba(255,255,255,0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: auto; background: var(--ink); }
+
+body {
+  background: var(--ink);
+  color: var(--ivory);
+  font-family: var(--sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--gold); color: var(--ink); }
+
+img { display: block; max-width: 100%; }
+
+#root { width: 100%; min-height: 100vh; }
