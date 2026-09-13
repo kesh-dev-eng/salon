@@ -295,13 +295,13 @@ export function formatPrice(price) {
 
 export const INITIAL_TIMETABLE = {
   workingDays: [
-    { day: 'Sun', name: 'Sunday', isOpen: true, openTime: '10:00 AM', closeTime: '06:00 PM' },
-    { day: 'Mon', name: 'Monday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
-    { day: 'Tue', name: 'Tuesday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
-    { day: 'Wed', name: 'Wednesday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
-    { day: 'Thu', name: 'Thursday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
-    { day: 'Fri', name: 'Friday', isOpen: true, openTime: '09:00 AM', closeTime: '07:00 PM' },
+    { day: 'Mon', name: 'Monday', isOpen: false, openTime: '10:00 AM', closeTime: '07:00 PM' },
+    { day: 'Tue', name: 'Tuesday', isOpen: true, openTime: '10:00 AM', closeTime: '07:00 PM' },
+    { day: 'Wed', name: 'Wednesday', isOpen: true, openTime: '09:00 AM', closeTime: '07:30 PM' },
+    { day: 'Thu', name: 'Thursday', isOpen: true, openTime: '09:00 AM', closeTime: '07:30 PM' },
+    { day: 'Fri', name: 'Friday', isOpen: true, openTime: '09:00 AM', closeTime: '07:30 PM' },
     { day: 'Sat', name: 'Saturday', isOpen: true, openTime: '09:00 AM', closeTime: '06:00 PM' },
+    { day: 'Sun', name: 'Sunday', isOpen: true, openTime: '10:30 AM', closeTime: '06:00 PM' },
   ],
   timeSlots: [
     { id: 't1', time: '09:30 AM', period: 'morning', label: 'Morning Light', badge: 'Available', active: true },

@@ -1265,7 +1265,7 @@ export default function App() {
         )}
 
         {currentPage === 'contact' && (
-          <ContactPage onBookNow={() => openBookingTab()} />
+          <ContactPage onBookNow={() => openBookingTab()} timetable={timetable} />
         )}
 
         {currentPage === 'careers' && (

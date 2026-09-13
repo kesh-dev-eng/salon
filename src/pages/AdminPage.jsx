@@ -18,6 +18,7 @@ import {
   syncServiceToSupabase,
   deleteServiceFromSupabase,
   SUPABASE_SCHEMA_SQL,
+  SUPABASE_UPDATE_SQL,
   isEmailAuthorizedAdmin,
   fetchAuthorizedAdmins,
   addAuthorizedAdmin,
@@ -378,6 +379,23 @@ export default function AdminPage({
     }
   }
 
+  const [copiedMigrationSql, setCopiedMigrationSql] = useState(false)
+  const handleCopyMigrationSQL = () => {
+    try {
+      navigator.clipboard?.writeText(SUPABASE_UPDATE_SQL)
+      setCopiedMigrationSql(true)
+      showToast('✓ SQL script copied to clipboard!')
+      setTimeout(() => setCopiedMigrationSql(false), 3000)
+    } catch {
+      showToast('Could not access clipboard.')
+    }
+  }
+
+  const hasRestrictedData = useMemo(() => {
+    if (!bookings || bookings.length === 0) return false
+    return bookings.some((b) => b.isRestrictedData || (b.guestName === 'Valued Guest' && !b.guestPhone && !b.guestEmail))
+  }, [bookings])
+
   const formatCleanPhone = (phone) => {
     if (!phone) return ''
     return String(phone).replace(/[^\d+]/g, '')
@@ -541,6 +559,12 @@ export default function AdminPage({
       if (setTimetable) setTimetable(INITIAL_TIMETABLE)
       showToast('✓ Timetable reset to default')
     }
+  }
+
+  const handleSaveTimetable = () => {
+    if (!setTimetable) return
+    setTimetable({ ...effectiveTimetable })
+    showToast('✓ Hours of Operation saved and published live!')
   }
 
   // --- Statistics & Overview calculations ---
@@ -1147,9 +1171,9 @@ export default function AdminPage({
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
-              <span>Timetable &amp; Hours</span>
+              <span>Hours of Operation</span>
               <span className="sck-tab-badge">
-                {(effectiveTimetable?.timeSlots || []).filter((s) => s.active !== false).length}
+                {(effectiveTimetable?.workingDays || []).filter((d) => d.isOpen).length} Open
               </span>
             </button>
 
@@ -1406,6 +1430,61 @@ export default function AdminPage({
                   </button>
                 </div>
               </div>
+
+              {hasRestrictedData && (
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05))',
+                  border: '1px solid rgba(234, 179, 8, 0.4)',
+                  borderRadius: '12px',
+                  padding: '16px 20px',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '16px',
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: '1 1 320px' }}>
+                    <span style={{ fontSize: '1.6rem', lineHeight: 1 }}>⚠️</span>
+                    <div>
+                      <strong style={{ color: '#facc15', fontSize: '0.98rem', display: 'block', marginBottom: '4px' }}>
+                        Database Permissions Required: Client Names &amp; Phones Hidden by Supabase RLS
+                      </strong>
+                      <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.84rem', lineHeight: 1.45, display: 'block' }}>
+                        Bookings are safely recorded in your database, but Supabase Row Level Security is currently preventing your browser from reading client names and contact info. Run <code>update_database.sql</code> in your Supabase SQL Editor to grant admin visibility.
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="sck-btn-teal"
+                      style={{ fontSize: '0.82rem', padding: '8px 16px', background: '#facc15', color: '#000', fontWeight: 'bold', border: 'none', cursor: 'pointer' }}
+                      onClick={handleCopyMigrationSQL}
+                    >
+                      {copiedMigrationSql ? '✓ Fix SQL Copied!' : '📋 Copy Fix SQL'}
+                    </button>
+                    <a
+                      href="https://supabase.com/dashboard/project/abresbnxhfhtpwnanfcn/sql"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="sck-btn-ghost"
+                      style={{ fontSize: '0.82rem', padding: '8px 16px', textDecoration: 'none', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px' }}
+                    >
+                      Open Supabase SQL Editor ↗
+                    </a>
+                    <button
+                      type="button"
+                      className="sck-btn-ghost"
+                      style={{ fontSize: '0.82rem', padding: '8px 14px', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '6px' }}
+                      onClick={() => handleSyncCloudBookings(false)}
+                      title="Check database again after running SQL"
+                    >
+                      🔄 Refresh
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Status & Search Filter Bar */}
               <div className="sck-filter-controls-row">
@@ -2242,12 +2321,20 @@ export default function AdminPage({
             <div className="sck-tab-pane">
               <div className="sck-pane-header">
                 <div>
-                  <h2 className="sck-pane-title">Salon Timetable &amp; Operating Hours</h2>
+                  <h2 className="sck-pane-title">Hours of Operation &amp; Schedule</h2>
                   <p className="sck-pane-subtitle">
-                    Configure weekly operating days, hours, and available reservation slots. Changes automatically synchronize with client booking availability.
+                    Configure your weekly operating days, hours, and available reservation slots. Changes automatically update the &ldquo;Hours of Operation&rdquo; card on the live Contact page and sync with customer booking availability.
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="sck-btn-teal"
+                    onClick={handleSaveTimetable}
+                    title="Save current hours to database and publish to live site"
+                  >
+                    ✓ Save &amp; Publish Hours
+                  </button>
                   <button
                     type="button"
                     className="sck-btn-secondary"
@@ -2320,6 +2407,56 @@ export default function AdminPage({
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Hours of Operation Live Website Preview */}
+              <div className="sck-admin-section-box" style={{ marginTop: 24 }}>
+                <div className="sck-box-header" style={{ marginBottom: 16 }}>
+                  <div>
+                    <h3 className="sck-box-title">Hours of Operation — Website Live Preview</h3>
+                    <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
+                      This card reflects your real-time schedule configured above and is displayed to all clients on the <strong style={{ color: '#ff9000' }}>Contact Page</strong>.
+                    </p>
+                  </div>
+                  <span style={{ fontSize: '0.78rem', background: 'rgba(74, 222, 128, 0.15)', color: '#4ade80', padding: '4px 10px', borderRadius: 4, border: '1px solid rgba(74, 222, 128, 0.3)', fontWeight: 600 }}>
+                    ● Synced with Contact Page
+                  </span>
+                </div>
+
+                <div style={{ maxWidth: 520, background: '#121110', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 6, padding: '28px 32px' }}>
+                  <h3 className="sck-hours-title" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 22, color: '#ffffff', margin: '0 0 20px 0', fontWeight: 500 }}>
+                    Hours of Operation
+                  </h3>
+                  <div className="sck-hours-list" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {(effectiveTimetable.workingDays || []).map((h) => (
+                      <div
+                        key={h.day}
+                        className={`sck-hour-row ${!h.isOpen ? 'is-closed' : ''}`}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          paddingBottom: 10,
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                          fontSize: '0.94rem'
+                        }}
+                      >
+                        <span className="sck-day-name" style={{ color: '#bcb8b0' }}>
+                          {h.name || h.day}
+                        </span>
+                        <span
+                          className="sck-time-range"
+                          style={{
+                            color: !h.isOpen ? '#e06c75' : '#ffffff',
+                            fontWeight: !h.isOpen ? 600 : 400
+                          }}
+                        >
+                          {h.isOpen ? `${h.openTime || '09:00 AM'} – ${h.closeTime || '07:00 PM'}` : 'Closed'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 

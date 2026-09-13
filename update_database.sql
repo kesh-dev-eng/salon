@@ -1,10 +1,14 @@
 -- ==============================================================================
--- BARBER HUB / SALON HUB — DATABASE UPDATE & PERMISSIONS MIGRATION
--- Run this in your Supabase SQL Editor:
+-- SALON HUB — COMPLETE ALL-IN-ONE DATABASE SETUP & PERMISSIONS SCRIPT
+-- Copy and paste this ENTIRE file into your Supabase SQL Editor and click "Run":
 -- https://supabase.com/dashboard/project/abresbnxhfhtpwnanfcn/sql
 -- ==============================================================================
 
--- 1. AUTHORIZED ADMINS TABLE & SEED
+-- ==============================================================================
+-- 1. TABLES CREATION
+-- ==============================================================================
+
+-- 1.1 Authorized Administrators
 create table if not exists public.authorized_admins (
   id text primary key,
   email text unique not null,
@@ -14,27 +18,15 @@ create table if not exists public.authorized_admins (
   created_at timestamptz default now()
 );
 
--- Safely upsert authorized administrators by unique email
-insert into public.authorized_admins (id, email, name, role, is_active)
-values
-  ('admin-keshav', 'keshavsharma00007@gmail.com', 'Keshav Sharma (Owner)', 'super_admin', true),
-  ('admin-master', 'admin@barberhub.com', 'Barber Hub Master Admin', 'super_admin', true),
-  ('admin-director', 'director@barberhub.com', 'Elena Vance', 'manager', true),
-  ('admin-salon', 'admin@salonhub.com', 'Salon Hub Admin', 'super_admin', true)
-on conflict (email) do update
-set name = excluded.name,
-    role = excluded.role,
-    is_active = excluded.is_active;
-
--- 2. APPOINTMENT RESERVATIONS / BOOKINGS TABLE & COLUMNS
+-- 1.2 Appointments & Reservations
 create table if not exists public.bookings (
   id text primary key,
   code text,
-  client_name text not null,
+  client_name text,
   client_phone text,
   client_email text,
   user_email text,
-  service_name text not null,
+  service_name text,
   service_price text,
   stylist text default 'Fifth Avenue Master Stylist',
   appointment_date text not null,
@@ -45,7 +37,7 @@ create table if not exists public.bookings (
   created_at timestamptz default now()
 );
 
--- Ensure all customer columns exist
+-- Ensure all booking columns exist (in case table was previously created)
 alter table public.bookings add column if not exists code text;
 alter table public.bookings add column if not exists client_name text;
 alter table public.bookings add column if not exists client_phone text;
@@ -61,15 +53,15 @@ alter table public.bookings add column if not exists status text default 'confir
 alter table public.bookings add column if not exists notes text;
 alter table public.bookings add column if not exists created_at timestamptz default now();
 
--- Ensure case-insensitive valid status check constraint
+update public.bookings set status = 'confirmed' where status is null or trim(status) = '';
 alter table public.bookings drop constraint if exists chk_bookings_status;
 alter table public.bookings add constraint chk_bookings_status
-  check (lower(trim(status)) in ('pending', 'confirmed', 'completed', 'cancelled'));
+  check (status is null or lower(trim(status)) in ('pending', 'confirmed', 'completed', 'cancelled'));
 
 create index if not exists bookings_code_idx on public.bookings (code);
 create index if not exists idx_bookings_date on public.bookings (appointment_date);
 
--- 3. CONCIERGE CONTACT INQUIRIES TABLE
+-- 1.3 Concierge Contact Inquiries
 create table if not exists public.contacts (
   id text primary key,
   name text not null,
@@ -80,7 +72,7 @@ create table if not exists public.contacts (
   created_at timestamptz default now()
 );
 
--- 4. TIMETABLE TABLE
+-- 1.4 Operating Hours & Timetable
 create table if not exists public.timetable (
   id text primary key default 'default',
   working_days jsonb not null,
@@ -89,7 +81,7 @@ create table if not exists public.timetable (
   updated_at timestamptz default now()
 );
 
--- 5. REVIEWS TABLE
+-- 1.5 Client Testimonials & Reviews
 create table if not exists public.reviews (
   id text primary key,
   author text not null,
@@ -101,30 +93,51 @@ create table if not exists public.reviews (
   created_at timestamptz default now()
 );
 
+-- 1.6 Services Catalog
+create table if not exists public.services (
+  id text primary key,
+  num text,
+  category text not null,
+  name text not null,
+  price text not null,
+  price_num numeric default 0,
+  duration text default '60 min',
+  tag text,
+  img text,
+  "desc" text,
+  created_at timestamptz default now()
+);
+
+-- 1.7 Salon Artisans & Stylists
+create table if not exists public.artisans (
+  id text primary key,
+  name text not null,
+  role text not null,
+  chair text,
+  bio text,
+  img text,
+  created_at timestamptz default now()
+);
+
+-- 1.8 Atelier Gallery / Portfolio
+create table if not exists public.gallery (
+  id text primary key,
+  category text not null,
+  tag text,
+  title text not null,
+  "desc" text,
+  img text not null,
+  created_at timestamptz default now()
+);
+
+
 -- ==============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- 2. ROW LEVEL SECURITY (RLS) POLICIES
+-- Enables instant frontend reading & admin management without permissions issues
 -- ==============================================================================
-alter table public.authorized_admins enable row level security;
+
+-- 2.1 Bookings (Allows viewing full client dossiers in Admin Panel)
 alter table public.bookings enable row level security;
-alter table public.contacts enable row level security;
-alter table public.reviews enable row level security;
-alter table public.timetable enable row level security;
-
--- Authorized Admins RLS
-drop policy if exists "Public select authorized_admins" on public.authorized_admins;
-drop policy if exists "Admin manage authorized_admins" on public.authorized_admins;
-
-create policy "Public select authorized_admins"
-  on public.authorized_admins for select to anon, authenticated
-  using (true);
-
-create policy "Admin manage authorized_admins"
-  on public.authorized_admins for all to anon, authenticated
-  using (true) with check (true);
-
-grant all on public.authorized_admins to anon, authenticated;
-
--- Bookings RLS
 drop policy if exists "Public insert appointment booking" on public.bookings;
 drop policy if exists "Client view own booking by code" on public.bookings;
 drop policy if exists "Admin manage bookings" on public.bookings;
@@ -132,7 +145,6 @@ drop policy if exists "Public select bookings" on public.bookings;
 drop policy if exists "Public update bookings" on public.bookings;
 drop policy if exists "Public delete bookings" on public.bookings;
 
--- Allow anon and authenticated to view all bookings so admin console can see all customer submissions
 create policy "Public select bookings"
   on public.bookings for select to anon, authenticated
   using (true);
@@ -151,7 +163,23 @@ create policy "Public delete bookings"
 
 grant all on public.bookings to anon, authenticated;
 
--- Contacts RLS
+-- 2.2 Authorized Admins
+alter table public.authorized_admins enable row level security;
+drop policy if exists "Public select authorized_admins" on public.authorized_admins;
+drop policy if exists "Admin manage authorized_admins" on public.authorized_admins;
+
+create policy "Public select authorized_admins"
+  on public.authorized_admins for select to anon, authenticated
+  using (true);
+
+create policy "Admin manage authorized_admins"
+  on public.authorized_admins for all to anon, authenticated
+  using (true) with check (true);
+
+grant all on public.authorized_admins to anon, authenticated;
+
+-- 2.3 Contacts
+alter table public.contacts enable row level security;
 drop policy if exists "Public insert contact inquiry" on public.contacts;
 drop policy if exists "Admin manage contacts" on public.contacts;
 drop policy if exists "Public select contacts" on public.contacts;
@@ -170,7 +198,8 @@ create policy "Admin manage contacts"
 
 grant all on public.contacts to anon, authenticated;
 
--- Timetable RLS
+-- 2.4 Timetable (Hours of Operation)
+alter table public.timetable enable row level security;
 drop policy if exists "Public read timetable" on public.timetable;
 drop policy if exists "Admin manage timetable" on public.timetable;
 
@@ -184,7 +213,8 @@ create policy "Admin manage timetable"
 
 grant all on public.timetable to anon, authenticated;
 
--- Reviews RLS
+-- 2.5 Reviews
+alter table public.reviews enable row level security;
 drop policy if exists "Public read reviews" on public.reviews;
 drop policy if exists "Public insert validated review" on public.reviews;
 drop policy if exists "Admin manage reviews" on public.reviews;
@@ -203,8 +233,54 @@ create policy "Admin manage reviews"
 
 grant all on public.reviews to anon, authenticated;
 
+-- 2.6 Services
+alter table public.services enable row level security;
+drop policy if exists "Public read services catalog" on public.services;
+drop policy if exists "Admin manage services" on public.services;
+
+create policy "Public read services catalog"
+  on public.services for select to anon, authenticated
+  using (true);
+
+create policy "Admin manage services"
+  on public.services for all to anon, authenticated
+  using (true) with check (true);
+
+grant all on public.services to anon, authenticated;
+
+-- 2.7 Artisans
+alter table public.artisans enable row level security;
+drop policy if exists "Public read artisans" on public.artisans;
+drop policy if exists "Admin manage artisans" on public.artisans;
+
+create policy "Public read artisans"
+  on public.artisans for select to anon, authenticated
+  using (true);
+
+create policy "Admin manage artisans"
+  on public.artisans for all to anon, authenticated
+  using (true) with check (true);
+
+grant all on public.artisans to anon, authenticated;
+
+-- 2.8 Gallery
+alter table public.gallery enable row level security;
+drop policy if exists "Public read gallery" on public.gallery;
+drop policy if exists "Admin manage gallery" on public.gallery;
+
+create policy "Public read gallery"
+  on public.gallery for select to anon, authenticated
+  using (true);
+
+create policy "Admin manage gallery"
+  on public.gallery for all to anon, authenticated
+  using (true) with check (true);
+
+grant all on public.gallery to anon, authenticated;
+
+
 -- ==============================================================================
--- RESERVATION SLOTS VIEW (With full customer details)
+-- 3. CALENDAR RESERVATIONS VIEW (With Full Customer Dossiers)
 -- ==============================================================================
 drop view if exists public.public_booked_slots cascade;
 
@@ -230,9 +306,12 @@ create or replace view public.public_booked_slots with (security_invoker = false
 
 grant select on public.public_booked_slots to anon, authenticated;
 
+
 -- ==============================================================================
--- RPC FUNCTIONS FOR ADMIN OPERATIONS
+-- 4. SECURITY DEFINER RPC FUNCTIONS
 -- ==============================================================================
+
+-- 4.1 Admin Check
 create or replace function public.is_active_admin(check_email text)
 returns boolean
 language sql
@@ -248,6 +327,7 @@ $$;
 
 grant execute on function public.is_active_admin(text) to anon, authenticated;
 
+-- 4.2 Verify Admin Email
 create or replace function public.verify_admin_email(check_email text)
 returns table (
   is_authorized boolean,
@@ -277,6 +357,7 @@ $$;
 
 grant execute on function public.verify_admin_email(text) to anon, authenticated;
 
+-- 4.3 Admin Fetch All Bookings
 create or replace function public.admin_fetch_bookings(p_admin_email text default null)
 returns setof public.bookings
 language plpgsql
@@ -293,6 +374,7 @@ $$;
 grant execute on function public.admin_fetch_bookings(text) to anon, authenticated;
 grant execute on function public.admin_fetch_bookings() to anon, authenticated;
 
+-- 4.4 Admin Fetch All Contacts
 create or replace function public.admin_fetch_contacts(p_admin_email text default null)
 returns setof public.contacts
 language plpgsql
@@ -309,6 +391,7 @@ $$;
 grant execute on function public.admin_fetch_contacts(text) to anon, authenticated;
 grant execute on function public.admin_fetch_contacts() to anon, authenticated;
 
+-- 4.5 Admin Update Booking Status
 create or replace function public.admin_update_booking_status(
   p_admin_email text,
   p_booking_id text,
@@ -330,6 +413,7 @@ $$;
 
 grant execute on function public.admin_update_booking_status(text, text, text) to anon, authenticated;
 
+-- 4.6 Admin Delete Booking
 create or replace function public.admin_delete_booking(
   p_admin_email text,
   p_booking_id text
@@ -349,6 +433,7 @@ $$;
 
 grant execute on function public.admin_delete_booking(text, text) to anon, authenticated;
 
+-- 4.7 Admin Update Timetable (Operating Hours)
 create or replace function public.admin_update_timetable(
   p_admin_email text,
   p_working_days jsonb,
@@ -374,3 +459,83 @@ end;
 $$;
 
 grant execute on function public.admin_update_timetable(text, jsonb, jsonb, text) to anon, authenticated;
+
+
+-- ==============================================================================
+-- 5. SEED INITIAL DATA (SAFE & IDEMPOTENT)
+-- ==============================================================================
+
+-- 5.1 Authorized Administrators
+insert into public.authorized_admins (id, email, name, role, is_active)
+values
+  ('admin-keshav', 'keshavsharma00007@gmail.com', 'Keshav Sharma (Owner)', 'super_admin', true),
+  ('admin-master', 'admin@barberhub.com', 'Barber Hub Master Admin', 'super_admin', true),
+  ('admin-director', 'director@barberhub.com', 'Elena Vance', 'manager', true),
+  ('admin-salon', 'admin@salonhub.com', 'Salon Hub Admin', 'super_admin', true)
+on conflict (email) do update
+set name = excluded.name,
+    role = excluded.role,
+    is_active = excluded.is_active;
+
+-- 5.2 Operating Hours / Timetable (Standard Hours)
+insert into public.timetable (id, working_days, time_slots, notice)
+values (
+  'default',
+  '[
+    {"day": "Mon", "name": "Monday", "isOpen": false, "openTime": "10:00 AM", "closeTime": "07:00 PM"},
+    {"day": "Tue", "name": "Tuesday", "isOpen": true, "openTime": "10:00 AM", "closeTime": "07:00 PM"},
+    {"day": "Wed", "name": "Wednesday", "isOpen": true, "openTime": "09:00 AM", "closeTime": "07:30 PM"},
+    {"day": "Thu", "name": "Thursday", "isOpen": true, "openTime": "09:00 AM", "closeTime": "07:30 PM"},
+    {"day": "Fri", "name": "Friday", "isOpen": true, "openTime": "09:00 AM", "closeTime": "07:30 PM"},
+    {"day": "Sat", "name": "Saturday", "isOpen": true, "openTime": "09:00 AM", "closeTime": "06:00 PM"},
+    {"day": "Sun", "name": "Sunday", "isOpen": true, "openTime": "10:30 AM", "closeTime": "06:00 PM"}
+  ]'::jsonb,
+  '[
+    {"id": "t1", "time": "09:30 AM", "period": "morning", "label": "Morning Light", "badge": "Available", "active": true},
+    {"id": "t2", "time": "10:30 AM", "period": "morning", "label": "Morning High", "badge": "Popular", "active": true},
+    {"id": "t3", "time": "11:30 AM", "period": "morning", "label": "Midday Prime", "badge": "Prime", "active": true},
+    {"id": "t4", "time": "01:00 PM", "period": "afternoon", "label": "Early Afternoon", "badge": "Available", "active": true},
+    {"id": "t5", "time": "02:15 PM", "period": "afternoon", "label": "Mid Afternoon", "badge": "Popular", "active": true},
+    {"id": "t6", "time": "03:30 PM", "period": "afternoon", "label": "Late Afternoon", "badge": "Available", "active": true},
+    {"id": "t7", "time": "04:30 PM", "period": "afternoon", "label": "Sunset Glow", "badge": "Prime", "active": true},
+    {"id": "t8", "time": "05:30 PM", "period": "evening", "label": "Fifth Ave Twilight", "badge": "Available", "active": true},
+    {"id": "t9", "time": "06:30 PM", "period": "evening", "label": "Evening Couture", "badge": "Peak Slot", "active": true},
+    {"id": "t10", "time": "07:15 PM", "period": "evening", "label": "Late Salon Session", "badge": "VIP Evening", "active": true}
+  ]'::jsonb,
+  'Tue – Sun: Dedicated Private Chair Sessions · Appointments & Walk-ins'
+)
+on conflict (id) do update
+set working_days = excluded.working_days,
+    time_slots = excluded.time_slots,
+    notice = excluded.notice;
+
+-- 5.3 Services Catalog
+insert into public.services (id, num, category, name, price, price_num, duration, tag, img, "desc")
+values
+  ('s1', '01', 'cut', 'Cut & Styling', 'Rs 150+', 150, '60 min', 'Hair', '/images/services/cut-styling.jpg', 'From precision haircuts tailored to your individual look to polished blowouts and elegant updos, every cut and styling service is crafted to bring out the best in your hair.'),
+  ('s2', '02', 'color', 'Color', 'Rs 220+', 220, '120 min', 'Color', '/images/services/color.jpg', 'From rich single-process color to expertly crafted balayage and highlights, our color services are tailored to complement your unique look by master colorists.'),
+  ('s3', '03', 'treatments', 'Conditioning Hair Treatments', 'Rs 95+', 95, '45 min', 'Care', '/images/services/conditioning.jpg', 'Restore softness, strength, and luminosity with luxury formulas from Kérastase, Shu Uemura, and Olaplex, leaving you with a healthier, radiant result.'),
+  ('s4', '04', 'makeup', 'Makeup', 'Rs 125+', 125, '60 min', 'Beauty', '/images/services/makeup.jpg', 'From custom blended makeup application and lash enhancements to eyebrow shaping and personalized lessons, designed to complement and elevate your full look.'),
+  ('s5', '05', 'bridal', 'Bridal', 'Rs 350+', 350, '180 min', 'Occasion', '/images/services/bridal.jpg', 'From your bridal trial to the moment you walk down the aisle, offering both in-salon and on-location hair services tailored to your wedding vision.'),
+  ('s6', '06', 'perms', 'Perms & Relaxer', 'Rs 200+', 200, '120 min', 'Texture', '/images/services/perms-relaxer.jpg', 'Whether you are looking to add lasting curl definition with a perm or achieve smooth, manageable results with a relaxer, tailored to your hair texture.'),
+  ('s7', '07', 'nails', 'Nails', 'Rs 65+', 65, '50 min', 'Nails', '/images/services/nails.jpg', 'From a classic manicure to gel, Dazzle Dry, powder gel, and beyond, luxury nail services designed to leave your hands and feet looking polished and refined.')
+on conflict (id) do nothing;
+
+-- 5.4 Artisans
+insert into public.artisans (id, name, role, chair, bio, img)
+values
+  ('artisan-1', 'Elena Vance', 'Creative Director & Colorist', 'Chair 01', '12 years atelier experience between London and Paris. Specialises in low-maintenance golden balayage.', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=700&q=80'),
+  ('artisan-2', 'Marcus Thorne', 'Master Sculptor & Fade Specialist', 'Chair 02', 'Vidal Sassoon trained. Master of precision men''s tapers, razor texturing, and sharp architectural crops.', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=700&q=80'),
+  ('artisan-3', 'Mei-Ling Zhou', 'Holistic Head Spa Therapist', 'Chair 03', 'Tokyo certified head spa master. Integrates herbal botanical extracts with restorative shiatsu acupressure.', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=700&q=80')
+on conflict (id) do nothing;
+
+-- 5.5 Reviews
+insert into public.reviews (id, stars, rating, quote, author, service)
+values
+  ('rev-1', '★★★★★', 5, 'I have been a client of Salon HUB since they opened. They are the best. I won''t go anywhere else. My hair is curly and they do an amazing job. Always have', 'Carolyn Pianin', 'Cut & Styling'),
+  ('rev-2', '★★★★★', 5, 'I had my hair cut by Carmel and it was such a great experience 10/10 recommend. She asked all the right questions to really understand what I was looking for. My hair came out fabulous!!', 'Sofia Appel', 'Cut & Styling'),
+  ('rev-3', '★★★★★', 5, 'I hadn''t had my naturally very dark hair colored in a very long time, but I took the plunge with Kelly at Salon HUB and it was the best decision! Kelly gave me a thorough consultation and along with Devin they made sure my cut and color work in perfect harmony.', 'Vanessa Moreno', 'Color'),
+  ('rev-4', '★★★★★', 5, 'I never write google reviews but the blowout that Rene just gave me deserves a review. It was a simple walk in and I’m leaving with the best blow out I have ever gotten.', 'Daniela Silva', 'Blow Dry'),
+  ('rev-5', '★★★★★', 5, 'Salon HUB is such a wonderful experience! The salon is beautiful, exquisitely clean, and packed with highly talented artists! Clint does my cut..a perfectionist! Kelly does my color…very natural!', 'Donna Mazur', 'Cut & Color'),
+  ('rev-6', '★★★★★', 5, 'I can’t say enough good things about this salon! Mark is a true artist with color — my color has never looked better. And Clint gives the best cuts; he really knows how to shape and style for your face and hair type.', 'M Bailey', 'Color & Cut')
+on conflict (id) do nothing;

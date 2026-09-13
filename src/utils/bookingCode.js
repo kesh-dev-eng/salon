@@ -265,32 +265,43 @@ export function mergeBookingRecords(cloudB, localB) {
       ? cloudB.code.trim().toUpperCase()
       : getOrGenerateBookingCode(localB || cloudB)
 
-  // 2. Client Name: Prefer real customer name over fallback 'Valued Guest'
+  // 2. Client Name: Prefer real customer name from cloud database or local booking over placeholder
   const isDefaultOrEmpty = (n) => !n || n.trim().toLowerCase() === 'valued guest' || n.trim().toLowerCase() === 'guest'
   const rawLocalName = (localB.guestName || localB.client_name || '').trim()
   const rawCloudName = (cloudB.guestName || cloudB.client_name || '').trim()
-  const resolvedName = !isDefaultOrEmpty(rawLocalName)
-    ? rawLocalName
-    : !isDefaultOrEmpty(rawCloudName)
-      ? rawCloudName
-      : (rawLocalName || rawCloudName || 'Valued Guest')
+  const resolvedName = !isDefaultOrEmpty(rawCloudName)
+    ? rawCloudName
+    : !isDefaultOrEmpty(rawLocalName)
+      ? rawLocalName
+      : (rawCloudName || rawLocalName || 'Valued Guest')
 
-  // 3. Contact Info
-  const resolvedPhone = (localB.guestPhone || localB.client_phone || cloudB.guestPhone || cloudB.client_phone || '').trim()
-  const resolvedEmail = (localB.guestEmail || localB.client_email || cloudB.guestEmail || cloudB.client_email || '').trim()
+  // 3. Contact Info: Prioritize customer-provided contact from cloud database
+  const resolvedPhone = (cloudB.guestPhone || cloudB.client_phone || localB.guestPhone || localB.client_phone || '').trim()
+  const resolvedEmail = (cloudB.guestEmail || cloudB.client_email || localB.guestEmail || localB.client_email || '').trim()
 
   // 4. Special Requests / Notes
-  const resolvedNotes = (localB.notes || localB.guestNotes || cloudB.notes || cloudB.guestNotes || '').trim()
+  const resolvedNotes = (cloudB.notes || cloudB.guestNotes || localB.notes || localB.guestNotes || '').trim()
 
   // 5. Schedule: Date & Time (Preserve client's selected slot)
-  const resolvedDate = localB.date || localB.appointment_date || cloudB.date || cloudB.appointment_date || ''
-  const resolvedTime = localB.time || localB.appointment_time || cloudB.time || cloudB.appointment_time || ''
+  const resolvedDate = cloudB.date || cloudB.appointment_date || localB.date || localB.appointment_date || ''
+  const resolvedTime = cloudB.time || cloudB.appointment_time || localB.time || localB.appointment_time || ''
 
-  // 6. Treatment & Investment
-  const resolvedService = localB.serviceName || localB.service_name || cloudB.serviceName || cloudB.service_name || 'Cut & Styling'
-  const resolvedPrice = localB.servicePrice || localB.service_price || cloudB.servicePrice || cloudB.service_price || 'Rs 150+'
-  const resolvedStylist = localB.stylist || cloudB.stylist || 'Fifth Avenue Master Stylist'
-  const resolvedQuiet = Boolean(localB.quiet_chair ?? localB.isQuietChair ?? cloudB.quiet_chair ?? cloudB.isQuietChair)
+  // 6. Treatment & Investment: Prioritize real service from database over default fallback
+  const isDefaultService = (s) => !s || s === 'Cut & Styling' || s === 'Bespoke Styling'
+  const rawCloudService = cloudB.serviceName || cloudB.service_name || ''
+  const rawLocalService = localB.serviceName || localB.service_name || ''
+  const resolvedService = !isDefaultService(rawCloudService)
+    ? rawCloudService
+    : (!isDefaultService(rawLocalService) ? rawLocalService : (rawCloudService || rawLocalService || 'Cut & Styling'))
+
+  const resolvedPrice = (cloudB.servicePrice && cloudB.servicePrice !== 'Rs 150+')
+    ? cloudB.servicePrice
+    : (cloudB.service_price && cloudB.service_price !== 'Rs 150+')
+      ? cloudB.service_price
+      : (localB.servicePrice || localB.service_price || cloudB.servicePrice || cloudB.service_price || 'Rs 150+')
+
+  const resolvedStylist = cloudB.stylist || localB.stylist || 'Fifth Avenue Master Stylist'
+  const resolvedQuiet = Boolean(cloudB.quiet_chair ?? cloudB.isQuietChair ?? localB.quiet_chair ?? localB.isQuietChair)
 
   // 7. Status & Timestamps
   const resolvedStatus = cloudB.status || localB.status || 'Confirmed'

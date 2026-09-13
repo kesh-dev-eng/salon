@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { SALON_INFO } from '../data/pagesData'
 import { syncContactToSupabase } from '../supabase'
 
-export default function ContactPage({ onBookClick }) {
+export default function ContactPage({ onBookNow, onBookClick, timetable }) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -11,6 +11,18 @@ export default function ContactPage({ onBookClick }) {
     message: ''
   })
   const [isSubmitted, setIsSubmitted] = useState(false)
+
+  const operatingHours = useMemo(() => {
+    if (timetable?.workingDays && Array.isArray(timetable.workingDays) && timetable.workingDays.length > 0) {
+      return timetable.workingDays.map((d) => ({
+        day: d.name || d.day,
+        time: d.isOpen
+          ? `${d.openTime || '10:00 AM'} – ${d.closeTime || '07:00 PM'}`
+          : 'Closed'
+      }))
+    }
+    return SALON_INFO.hours
+  }, [timetable])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -114,7 +126,7 @@ export default function ContactPage({ onBookClick }) {
               <div className="sck-contact-hours-card">
                 <h3 className="sck-hours-title">Hours of Operation</h3>
                 <div className="sck-hours-list">
-                  {SALON_INFO.hours.map((h) => (
+                  {operatingHours.map((h) => (
                     <div key={h.day} className={`sck-hour-row ${h.time === 'Closed' ? 'is-closed' : ''}`}>
                       <span className="sck-day-name">{h.day}</span>
                       <span className="sck-time-range">{h.time}</span>
