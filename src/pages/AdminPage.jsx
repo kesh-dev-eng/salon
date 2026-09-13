@@ -1465,7 +1465,7 @@ export default function AdminPage({
                       {copiedMigrationSql ? '✓ Fix SQL Copied!' : '📋 Copy Fix SQL'}
                     </button>
                     <a
-                      href="https://supabase.com/dashboard/project/abresbnxhfhtpwnanfcn/sql"
+                      href="https://supabase.com/dashboard/project/cnvufufsewrcvwxhegpd/sql"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="sck-btn-ghost"

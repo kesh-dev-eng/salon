@@ -3,13 +3,13 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 import { getAnalytics, isSupported } from 'firebase/analytics'
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyAE8ggbIKJMm91X9sm28wGHzNAhsNFt1os',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'atles-2e09f.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'atles-2e09f',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'atles-2e09f.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '556667041264',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:556667041264:web:8ebf82861224a1b13cd935',
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-GPMRC81WDW'
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyBZeKuLHJuTKm6gMlVD_1v1AhWVGfHp-dk',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'saloon-97a5e.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'saloon-97a5e',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'saloon-97a5e.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '897860791811',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:897860791811:web:bf2b54c840e066e22ae836',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-YFCSW86009'
 }
 
 export const isFirebaseConfigured = Boolean(
